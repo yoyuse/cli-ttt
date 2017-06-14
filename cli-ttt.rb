@@ -21,19 +21,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # --------------------------------------------------------------------
-
-$ttt_usage = <<EOF
-Usage: #{$0} [options] [--] [str ...]
-    -e     EUC-JP
-    -s     Shift_JIS
-    -j     ISO-2022-JP
-    -u     UTF-8 (default)
-    -m pat Decode at marker PAT
-    -n     No newline
-    -w     Decode whole STR
-EOF
-
-# --------------------------------------------------------------------
 # configs
 
 module TTT
@@ -1263,104 +1250,105 @@ module TTT
 end
 
 # --------------------------------------------------------------------
+# main
 
-def do_nkf(src)
-  $nkf_opt ? NKF::nkf($nkf_opt + " -W -m0", src) : src
-end
+if __FILE__ == $0
+  include TTT
 
-include TTT
+  $marker = ""
+  $nkf_opt = ""
 
-def do_ttt
-  dst = ""
-  while str = ARGV.shift do
-    if $OPT["w"]
-      dst += decode_string(str)
-    elsif $marker.empty?
-      dst += decode_substring(str)
-    else
-      dst += decode_at_marker(str, $marker)
-    end
-    dst += (ARGV.empty? ? ($OPT["n"] ? "" : "\n") : " ")
+  def do_nkf(src)
+    ($nkf_opt && !$nkf_opt.empty?) ? NKF::nkf($nkf_opt + " -W -m0", src) : src
   end
-  dst = do_nkf(dst)
-  print(dst)
-end
 
-def do_ttt_stdin
-  while str = gets do
-    # XXX: need code(re)conv on str?
-    if $OPT["w"]
-      dst = decode_string(str)
-    elsif $marker.empty?
-      dst = decode_substring(str)
-    else
-      dst = decode_at_marker(str, $marker)
+  def do_ttt
+    dst = ""
+    while str = ARGV.shift do
+      if $OPT["w"]
+        dst += decode_string(str)
+      elsif $marker.empty?
+        dst += decode_substring(str)
+      else
+        dst += decode_at_marker(str, $marker)
+      end
+      dst += (ARGV.empty? ? ($OPT["n"] ? "" : "\n") : " ")
     end
     dst = do_nkf(dst)
     print(dst)
   end
-end
 
-# --------------------------------------------------------------------
+  def do_ttt_stdin
+    while str = gets do
+      # XXX: need code(re)conv on str?
+      if $OPT["w"]
+        dst = decode_string(str)
+      elsif $marker.empty?
+        dst = decode_substring(str)
+      else
+        dst = decode_at_marker(str, $marker)
+      end
+      dst = do_nkf(dst)
+      print(dst)
+    end
+  end
 
-def unbackslash(str)
-  a = str.split(//)
-  dst = ""
-  while ch = a.shift do
-    case ch
-    when "\\"
-      ch = a.shift
+  # ------------------------------------------------------------------
+
+  def unbackslash(str)
+    a = str.split(//)
+    dst = ""
+    while ch = a.shift do
       case ch
-      when "a"; dst += "\a"
-      when "b"; dst += "\b"
-      when "e"; dst += "\e"
-      when "f"; dst += "\f"
-      when "n"; dst += "\n"
-      when "r"; dst += "\r"
-      when "t"; dst += "\t"
+      when "\\"
+        ch = a.shift
+        case ch
+        when "a"; dst += "\a"
+        when "b"; dst += "\b"
+        when "e"; dst += "\e"
+        when "f"; dst += "\f"
+        when "n"; dst += "\n"
+        when "r"; dst += "\r"
+        when "t"; dst += "\t"
 
-      when "c"
-        n = 0                   # XXX: default value
-        # n = a.shift.bytes[0] & 0x1f if !a.empty? && a[0] <= "\x7f"
-        if !a.empty? && a[0] <= "\x7f"
-          n = a.shift.bytes[0] & 0x1f
+        when "c"
+          n = 0                 # XXX: default value
+          if !a.empty? && a[0] <= "\x7f"
+            n = a.shift.bytes[0] & 0x1f
+            dst += n.chr
+          else
+            # XXX
+            dst += "c"
+          end
+
+        when "x"
+          n = 0                 # XXX: default value
+          n = a.shift.hex if !a.empty? && /[\da-f]/i =~ a[0]
+          n = n * 0x10 + a.shift.hex if !a.empty? && /[\da-f]/i =~ a[0]
           dst += n.chr
+
+        when /[0-7]/
+          n = 0                 # XXX: default value
+          n = ch.oct
+          n = n * 010 + a.shift.oct if !a.empty? && /[0-7]/ =~ a[0]
+          n = n * 010 + a.shift.oct if !a.empty? && /[0-7]/ =~ a[0] && n < 040
+          dst += n.chr
+
+        when nil; dst += "\\"   # XXX: str ends with backslash
+
         else
-          # XXX
-          dst += "c"
+          dst += ch
         end
-
-      when "x"
-        n = 0                   # XXX: default value
-        n = a.shift.hex if !a.empty? && /[\da-f]/i =~ a[0]
-        n = n * 0x10 + a.shift.hex if !a.empty? && /[\da-f]/i =~ a[0]
-        dst += n.chr
-
-      when /[0-7]/
-        n = 0                   # XXX: default value
-        n = ch.oct
-        n = n * 010 + a.shift.oct if !a.empty? && /[0-7]/ =~ a[0]
-        n = n * 010 + a.shift.oct if !a.empty? && /[0-7]/ =~ a[0] && n < 040
-        dst += n.chr
-
-      when nil; dst += "\\"     # XXX: str ends with backslash
 
       else
         dst += ch
       end
-
-    else
-      dst += ch
     end
+    return dst
   end
-  return dst
-end
 
-# --------------------------------------------------------------------
+  # ------------------------------------------------------------------
 
-$marker = ""
-
-if __FILE__ == $0
   case ENV["LANG"]
   when /ja_JP\.eucJP|ja_JP\.EUC/
     $nkf_opt = "-e"
@@ -1369,7 +1357,18 @@ if __FILE__ == $0
   end
 
   require "optparse"
-  $OPT = ARGV.getopts("hesjunm:w", "help")
+  $OPT = ARGV.getopts("hesjum:nw", "help")
+
+  $ttt_usage = <<EOF
+Usage: #{$0} [options] [--] [str ...]
+    -e     EUC-JP
+    -s     Shift_JIS
+    -j     ISO-2022-JP
+    -u     UTF-8 (default)
+    -m pat Decode at marker PAT
+    -n     No newline
+    -w     Decode whole STR
+EOF
 
   if $OPT["h"] || $OPT["help"]
     $stderr.puts $ttt_usage

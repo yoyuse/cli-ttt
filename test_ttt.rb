@@ -3,6 +3,7 @@
 require 'test/unit'
 
 require './cli-ttt'
+include TTT
 
 # - test class should inherit Test::Unit::TestCase
 # - test methods are named as test_xxx
