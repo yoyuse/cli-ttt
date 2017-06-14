@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# cli-ttt.rb --- Tiny TT-Code Translation for Command-line interface
+# cli-ttt.rb --- Tiny TT-Code Translation for command-line interface
 
 # Copyright (C) 2013--2017  YUSE Yosihiro
 
@@ -22,20 +22,6 @@
 
 # --------------------------------------------------------------------
 
-# 2017-06-11     marker <- xfer. -w <- -W, -m PAT <- -X STR
-# 2017-06-10     add new option: -W, -X STR. remove option: -Z
-# 2017-06-07 0.8 fix decode_xfer so that xfer conversion go left to right
-# 2017-06-06     array (bounds) check
-# 2017-06-02 0.7 from t3/t3.rb and t3/Linux/t3
-# 2014-08-31     $ttt_*_file_path defaults to nil
-# 2014-04-21 0.4 $ttt_{log,input_count,output-count}_file_path defaults to nil
-# 2014-02-06 0.4 @lazurite: coding: utf-8, no -Ku command line option
-# 2013-11-25 0.3 append explicit " -W" to $nkf_opt
-# 2013-06-03 0.2 -Z option and stat recording implemented. by Makefile
-# 2013-06-02 0.1 from t5/tete.yy.rb and ttt_scpt/ttt.yy.rb
-
-# --------------------------------------------------------------------
-
 $ttt_usage = <<EOF
 Usage: #{$0} [options] [--] [str ...]
     -e     EUC-JP
@@ -52,8 +38,6 @@ EOF
 
 $ttt_keys = "1234567890qwertyuiopasdfghjkl;zxcvbnm,./"
 $ttt_delimiter = ":"
-
-$ttt_marker = ""
 
 $ttt_table =
   # TABLE BEGIN - DO NOT REMOVE THIS LINE
@@ -1215,10 +1199,10 @@ def decode_string(str)
       end
       t = t[k]
       case t
+      when nil
+        t = $ttt_table
       when String
         dst += t
-        t = $ttt_table
-      when nil
         t = $ttt_table
       end
     end
@@ -1263,12 +1247,12 @@ def decode_substring(str)
   head + decode_string(body) + tail
 end
 
-def decode_at_marker(str)
-  while !$ttt_marker.empty?     # unless $ttt_marker.empty? while true ...
-    i = str.index($ttt_marker)
+def decode_at_marker(str, marker)
+  while !marker.empty?          # unless marker.empty? while true ...
+    i = str.index(marker)
     break if i == nil
     src = str[0...i]
-    str = decode_substring(src) + str[(i + $ttt_marker.length)...str.length]
+    str = decode_substring(src) + str[(i + marker.length)...str.length]
   end
   str
 end
@@ -1282,10 +1266,10 @@ def do_ttt
   while str = ARGV.shift do
     if $OPT["w"]
       dst += decode_string(str)
-    elsif $ttt_marker.empty?
+    elsif $marker.empty?
       dst += decode_substring(str)
     else
-      dst += decode_at_marker(str)
+      dst += decode_at_marker(str, $marker)
     end
     dst += (ARGV.empty? ? ($OPT["n"] ? "" : "\n") : " ")
   end
@@ -1298,10 +1282,10 @@ def do_ttt_stdin
     # XXX: need code(re)conv on str?
     if $OPT["w"]
       dst = decode_string(str)
-    elsif $ttt_marker.empty?
+    elsif $marker.empty?
       dst = decode_substring(str)
     else
-      dst = decode_at_marker(str)
+      dst = decode_at_marker(str, $marker)
     end
     dst = do_nkf(dst)
     print(dst)
@@ -1365,6 +1349,8 @@ end
 
 # --------------------------------------------------------------------
 
+$marker = ""
+
 case ENV["LANG"]
 when /ja_JP\.eucJP|ja_JP\.EUC/
   $nkf_opt = "-e"
@@ -1387,7 +1373,7 @@ $nkf_opt = "-w" if $OPT["u"]
 
 require "nkf" if $nkf_opt
 
-$ttt_marker = unbackslash($OPT["m"]) if $OPT["m"]
+$marker = unbackslash($OPT["m"]) if $OPT["m"]
 
 if ARGV.empty?
   do_ttt_stdin
