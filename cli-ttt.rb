@@ -1351,34 +1351,36 @@ end
 
 $marker = ""
 
-case ENV["LANG"]
-when /ja_JP\.eucJP|ja_JP\.EUC/
-  $nkf_opt = "-e"
-when /ja_JP\.SJIS/
-  $nkf_opt = "-s"
-end
+if __FILE__ == $0
+  case ENV["LANG"]
+  when /ja_JP\.eucJP|ja_JP\.EUC/
+    $nkf_opt = "-e"
+  when /ja_JP\.SJIS/
+    $nkf_opt = "-s"
+  end
 
-require "optparse"
-$OPT = ARGV.getopts("hesjunm:w", "help")
+  require "optparse"
+  $OPT = ARGV.getopts("hesjunm:w", "help")
 
-if $OPT["h"] || $OPT["help"]
-  $stderr.puts $ttt_usage
-  exit
-end
+  if $OPT["h"] || $OPT["help"]
+    $stderr.puts $ttt_usage
+    exit
+  end
 
-$nkf_opt = "-e" if $OPT["e"]
-$nkf_opt = "-s" if $OPT["s"]
-$nkf_opt = "-j" if $OPT["j"]
-$nkf_opt = "-w" if $OPT["u"]
+  $nkf_opt = "-e" if $OPT["e"]
+  $nkf_opt = "-s" if $OPT["s"]
+  $nkf_opt = "-j" if $OPT["j"]
+  $nkf_opt = "-w" if $OPT["u"]
 
-require "nkf" if $nkf_opt
+  require "nkf" if $nkf_opt
 
-$marker = unbackslash($OPT["m"]) if $OPT["m"]
+  $marker = unbackslash($OPT["m"]) if $OPT["m"]
 
-if ARGV.empty?
-  do_ttt_stdin
-else
-  do_ttt
+  if ARGV.empty?
+    do_ttt_stdin
+  else
+    do_ttt
+  end
 end
 
 # --------------------------------------------------------------------
