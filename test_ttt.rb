@@ -34,7 +34,7 @@ class TestTTT < Test::Unit::TestCase
     ["abcd:yfhdyd", "abcdあいう"],
     ["ysksjsks/ajgjfkdt8p3;gpzjshdjtighd", "わたしたちは氷砂糖をほしいくらい"],
     ["あの Iha-Tovo kd,fhrjaoajrks風", "あの Iha-Tovo のすきとおった風"],
-    ["(またアラッディン　\\ruby{lyfjlk}{ラムプ}とり)", "(またアラッディン　\\ruby{洋燈}{ラムプ}とり)"],
+    ["(またAladdin　lyfjlk[ラムプ]とり)", "(またAladdin　洋燈[ラムプ]とり)"],
   ]
   def test_decode_substring
     @@tests2.each do |src, dst|
@@ -50,7 +50,7 @@ class TestTTT < Test::Unit::TestCase
     ["%", "ysksjsks/ajgjfkdt8p3;gpzjshdjtighd%s", "わたしたちは氷砂糖をほしいくらい"],
     ["\x1bj", "yfkd%s Iha-Tovo kd,fhrjaoajrks風%s", "あの Iha-Tovo のすきとおった風"],
     ["\x1bj", "うつくしい森で飾られた Morio:/v%s", "うつくしい森で飾られた Morio市"],
-    ["\x1bj", "(またアラッディン　\\ruby{lyfjlk}{usubmw}jajc)%s%s%s", "(またアラッディン　\\ruby{洋燈}{ラムプ}とり)"],
+    ["\x1bj", "(またAladdin　lyfjlk[usubmw]jajc)%s%s%s", "(またAladdin　洋燈[ラムプ]とり)"],
     ["\x1bj", ";d%s;f%sha", "岳ha"],
   ]
   def test_decode_at_marker
