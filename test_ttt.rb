@@ -21,7 +21,7 @@ class TestTTT < Test::Unit::TestCase
   @@tests1 = [
     ["kdjd;sjdkd;s", "の、が、のが"],
     ["ABCDyfhdyd", "ABCDあいう"],
-    ["ysksjsks/ajgjfkdt8p3;gpzjshdjtighd", "わたしたちは氷砂糖をほしいくらい"],
+    ["ysksjsks/ajgjdjfkdt8p3;gpzjshdjtighdiakslghdhgiajd", "わたしたちは、氷砂糖をほしいくらいもたないでも、"],
   ]
   def test_decode_string()
     @@tests1.each do |src, dst|
@@ -32,9 +32,9 @@ class TestTTT < Test::Unit::TestCase
   @@tests2 = [
     ["abcd yfhdyd", "abcd あいう"],
     ["abcd:yfhdyd", "abcdあいう"],
-    ["ysksjsks/ajgjfkdt8p3;gpzjshdjtighd", "わたしたちは氷砂糖をほしいくらい"],
-    ["あの Iha-Tovo kd,fhrjaoajrks風", "あの Iha-Tovo のすきとおった風"],
-    ["(またAladdin　lyfjlk[ラムプ]とり)", "(またAladdin　洋燈[ラムプ]とり)"],
+    ["ysksjsks/ajgjdjfkdt8p3;gpzjshdjtighdiakslghdhgiajd", "わたしたちは、氷砂糖をほしいくらいもたないでも、"],
+    ["あの Iha-Tovo kd,fhrjaoajrks風、", "あの Iha-Tovo のすきとおった風、"],
+    ["(またAladdin  lyfjlk[ラムプ]とり)", "(またAladdin  洋燈[ラムプ]とり)"],
   ]
   def test_decode_substring
     @@tests2.each do |src, dst|
@@ -47,10 +47,10 @@ class TestTTT < Test::Unit::TestCase
     ["%", "ABCDyfhdyd%s", "ABCDあいう"],
     ["%", "abcd yfhdyd%s", "abcd あいう"],
     ["%", "abcd:yfhdyd%s", "abcdあいう"],
-    ["%", "ysksjsks/ajgjfkdt8p3;gpzjshdjtighd%s", "わたしたちは氷砂糖をほしいくらい"],
-    ["\x1bj", "yfkd%s Iha-Tovo kd,fhrjaoajrks風%s", "あの Iha-Tovo のすきとおった風"],
-    ["\x1bj", "うつくしい森で飾られた Morio:/v%s", "うつくしい森で飾られた Morio市"],
-    ["\x1bj", "(またAladdin　lyfjlk[usubmw]jajc)%s%s%s", "(またAladdin　洋燈[ラムプ]とり)"],
+    ["%", "ysksjsks/ajgjdjfkdt8p3;gpzjshdjtighdiakslghdhgiajd%s", "わたしたちは、氷砂糖をほしいくらいもたないでも、"],
+    ["\x1bj", "yfkd%s Iha-Tovo kd,fhrjaoajrks風、%s", "あの Iha-Tovo のすきとおった風、"],
+    ["\x1bj", "うつくしい森で飾られた Morio:/vjd%s", "うつくしい森で飾られた Morio市、"],
+    ["\x1bj", "(またAladdin  lyfjlk[usubmw]jajc)%s%s%s", "(またAladdin  洋燈[ラムプ]とり)"],
     ["\x1bj", ";d%s;f%sha", "岳ha"],
   ]
   def test_decode_at_marker
