@@ -1,0 +1,31 @@
+= HISTORY
+
+== Under Git control
+
+- 2021-03-08 feat: titeto --- isearch a la migemo
+- 2021-01-24 Fix license
+- 2017-06-28 Fix sample text
+- 2017-06-19 Add README.md
+- 2017-06-18 Fix spell and ruby
+- 2017-06-17 Fix backslash
+- 2017-06-14 Move everything out of `module TTT` into `if __FILE__ == $0 ... end`
+- 2017-06-14 Move core part of ttt into new `module TTT`, with mktable.pl output
+- 2017-06-14 Add test_ttt.rb for test
+- 2017-06-14 Enclose main routine in `if __FILE__ == $0` and `end`
+- 2017-06-14 $marker <- $ttt_marker; passed as param. Remove history comment
+- 2017-06-13 Rename bash-ttt.{sh,bash} and zsh-ttt.{sh,zsh}, with improvement
+- 2017-06-12 Initial commit
+
+== Before Git control
+
+- 2017-06-11     marker <- xfer. -w <- -W, -m PAT <- -X STR
+- 2017-06-10     add new option: -W, -X STR. remove option: -Z
+- 2017-06-07 0.8 fix decode_xfer so that xfer conversion go left to right
+- 2017-06-06     array (bounds) check
+- 2017-06-02 0.7 from t3/t3.rb and t3/Linux/t3
+- 2014-08-31     $ttt_*_file_path defaults to nil
+- 2014-04-21 0.4 $ttt_{log,input_count,output-count}_file_path defaults to nil
+- 2014-02-06 0.4 @lazurite: coding: utf-8, no -Ku command line option
+- 2013-11-25 0.3 append explicit " -W" to $nkf_opt
+- 2013-06-03 0.2 -Z option and stat recording implemented. by Makefile
+- 2013-06-02 0.1 from t5/tete.yy.rb and ttt_scpt/ttt.yy.rb

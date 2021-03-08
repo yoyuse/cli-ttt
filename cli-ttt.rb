@@ -2,7 +2,7 @@
 
 # cli-ttt.rb --- Tiny TT-Code Translation for command-line interface
 
-# Copyright (C) 2013--2017  YUSE Yosihiro
+# Copyright (C) 2013--2017, 2021  YUSE Yosihiro
 
 # This software is released under the MIT License.
 # http://opensource.org/licenses/mit-license.php
@@ -1158,7 +1158,7 @@ module TTT
     attr_accessor :keys, :delimiter, :table
   end
 
-  def decode_string(str)
+  def decode_string(str, with_state = false)
     code = str.split(//)
     t = TTT.table
     dst = ""
@@ -1186,7 +1186,7 @@ module TTT
       end
     end
 
-    dst
+    with_state ? [dst, t] : dst
   end
 
   def decode_substring(str)
