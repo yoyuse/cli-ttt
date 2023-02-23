@@ -2,7 +2,7 @@
 
 # titeto --- isearch a la migemo
 
-# Copyright (C) 2021  YUSE Yosihiro
+# Copyright (C) 2021, 2023  YUSE Yosihiro
 
 # This software is released under the MIT License.
 # http://opensource.org/licenses/mit-license.php
@@ -66,7 +66,7 @@ Usage: #{$0} [options]
 Options:
   -d --dict <dict>      [IGNORED] Use a file <dict> for dictionary.
   -s --subdict <dict>   [IGNORED] Sub dictionary files. (MAX 8 times)
-  -q --quitet           Show no message except results.
+  -q --quiet            Show no message except results.
   -v --vim              Use vim style regexp.
   -e --emacs            Use emacs style regexp.
   -n --nonewline        Don't use newline match.
@@ -78,7 +78,7 @@ EOF
   parser = GetoptLong.new
   parser.set_options(['-d', '--dict',      GetoptLong::REQUIRED_ARGUMENT],
                      ['-s', '--subdict',   GetoptLong::REQUIRED_ARGUMENT],
-                     ['-q', '--quitet',    GetoptLong::NO_ARGUMENT],
+                     ['-q', '--quiet',     GetoptLong::NO_ARGUMENT],
                      ['-v', '--vim',       GetoptLong::NO_ARGUMENT],
                      ['-e', '--emacs',     GetoptLong::NO_ARGUMENT],
                      ['-n', '--nonewline', GetoptLong::NO_ARGUMENT],
