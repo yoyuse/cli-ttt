@@ -2,7 +2,7 @@
 
 # cli-ttt.rb --- Tiny TT-Code Translation for command-line interface
 
-# Copyright (C) 2013--2017, 2021  YUSE Yosihiro
+# Copyright (C) 2013--2017, 2021, 2023  YUSE Yosihiro
 
 # This software is released under the MIT License.
 # http://opensource.org/licenses/mit-license.php

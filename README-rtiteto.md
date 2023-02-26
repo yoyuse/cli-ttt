@@ -14,7 +14,7 @@ without TT-code conversion.
 ## Installation
 
 First install [Shougo/vimproc.vim](https://github.com/Shougo/vimproc.vim),
-required by `osyo-manga/vim-vigem`.
+required by `osyo-manga/vim-vigemo`.
 
 Install `rtiteto` command in your `$PATH`:
 

@@ -2,6 +2,7 @@
 
 == Under Git control
 
+- 2023-02-26 Fix slash escape (for ripgrep); Fix typo
 - 2023-02-24 Add "禮" `43w6` and "剪" `43lb`
 - 2023-02-23 Fix typo
 - 2021-03-08 feat: titeto --- isearch a la migemo

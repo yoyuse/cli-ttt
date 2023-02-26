@@ -19,13 +19,20 @@ module Titeto
   @op_nest_in = "("
   @op_nest_out = ")"
   @op_newline = ""
+  @escape_slash = false
 
   class << self
-    attr_accessor :op_or, :op_nest_in, :op_nest_out, :op_newline
+    # attr_accessor :op_or, :op_nest_in, :op_nest_out, :op_newline
+    attr_accessor :op_or, :op_nest_in, :op_nest_out, :op_newline, :escape_slash
   end
 
   def regexp_escape(str)
-    str.gsub(/[\[\]\\.*^$~\/]/) {'\\' + $&} # XXX: これで必要十分?
+    # str.gsub(/[\[\]\\.*^$~\/]/) {'\\' + $&} # XXX: これで必要十分?
+    # XXX: / を \/ としてしまうと ripgrep でエラーになる
+    # XXX: ripgrep error: unrecognized escape sequence
+    # XXX: でも vim では \/ としないといけないのでは…?
+    # XXX: cmigemo では \/ としている (そして ripgrep でエラーになる…)
+    str.gsub(Titeto.escape_slash ? /[\[\]\\.*^$~\/]/ : /[\[\]\\.*^$~]/) {'\\' + $&} # XXX: これで必要十分?
   end
 
   def generate_regexp_str(pattern, with_paren = false)
@@ -103,6 +110,7 @@ EOF
     Titeto.op_nest_in = "\\%("
     Titeto.op_nest_out = "\\)"
     Titeto.op_newline = "\\_s*" unless $OPT["n"]
+    Titeto.escape_slash = true
   elsif $OPT["e"]
     Titeto.op_or = "\\|"
     Titeto.op_nest_in = "\\("
