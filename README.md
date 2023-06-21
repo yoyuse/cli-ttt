@@ -1,7 +1,7 @@
 # cli-ttt
 
 `cli-ttt` is a Tiny TT-Code Translation program for command-line interface,
-written in Ruby.
+written in Perl and Ruby.
 
 ## Usage
 
@@ -74,11 +74,11 @@ on command line of interactive shell.
 
 ``` shell
 function bash-ttt() {
-    local lbuf=$(cut -b 1-$READLINE_POINT <<< "$READLINE_LINE")
-    local rbuf=$(cut -b $(expr $READLINE_POINT + 1)- <<< "$READLINE_LINE")
-    local buf=$(cli-ttt <<< "$lbuf")
+    local lbuf="${READLINE_LINE:0:$READLINE_POINT}"
+    local rbuf="${READLINE_LINE:$READLINE_POINT}"
+    local buf="$(cli-ttt <<< "$lbuf")"
     READLINE_LINE="$buf$rbuf"
-    READLINE_POINT=$(expr $(wc -c <<< "$buf") - 1)
+    READLINE_POINT=${#buf}
 }
 
 if [ $BASH_VERSINFO -gt 3 ]
