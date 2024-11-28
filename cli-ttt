@@ -20,12 +20,12 @@ use Getopt::Long qw(:config posix_default no_ignore_case gnu_compat);
 # configs
 
 package TTT {
-    my $keys = "1234567890qwertyuiopasdfghjkl;zxcvbnm,./";
+    our $keys = "1234567890qwertyuiopasdfghjkl;zxcvbnm,./";
 
-    # my $delimiter = ":";
-    my $pattern = qr(^(.*?)(:?([0-9a-z;,./]+))([^0-9a-z;,./]*)$);
+    # our $delimiter = ":";
+    our $pattern = qr(^(.*?)(:?([0-9a-z;,./]+))([^0-9a-z;,./]*)$);
 
-    my $table;
+    our $table;
 
     my $ttw = <<'EOF';
 刋刔刎刧刪刮刳剏剄剋剌剞剔剪剴剩剳剿剽劍劔劒剱劈劑辨辧劬劭劼劵勁勍勗勞勣勦飭勠勳
@@ -263,8 +263,9 @@ EOF
 
     &make_table();
 
-    sub decode_string($) {
-        my $str = shift;
+    sub decode_string($;$) {
+        # my $str = shift;
+        my ($str, $with_state) = @_;
         my $t = $table;
         my $dst = "";
         for my $ch (split('', $str)) {
@@ -282,7 +283,7 @@ EOF
                 }
             }
         }
-        $dst;
+        $with_state ? ($dst, $t) : $dst;
     }
 
     sub decode_substring($) {

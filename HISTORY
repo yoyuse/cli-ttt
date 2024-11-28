@@ -2,6 +2,7 @@
 
 == Under Git control
 
+- 2024-11-28 Add titeto: Perl version of rtiteto.rb
 - 2024-02-23 tt-t1: TT-code 4.0
 - 2023-06-21 Fix bash-ttt.bash; Update README.md
 - 2023-06-21 Add Perl version: cli-ttt and test_ttt.pl

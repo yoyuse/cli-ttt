@@ -1,0 +1,130 @@
+#!/usr/bin/env perl
+
+# titeto --- isearch a la migemo
+
+# Copyright (C) 2024  YUSE Yosihiro
+
+# This software is released under the MIT License.
+# http://opensource.org/licenses/mit-license.php
+
+# --------------------------------------------------------------------
+# code
+
+use FindBin;
+use lib "$FindBin::Bin";
+
+require "cli-ttt";
+
+package Titeto {
+    our $op_or = "|";
+    our $op_nest_in = "(";
+    our $op_nest_out = ")";
+    our $op_newline = "";
+    our $ch_meta = qr![(){}\[\]\\.*^$~]!;
+
+    sub regexp_escape($) {
+        my $str = shift;
+        $str =~ s{$ch_meta}{'\\' . $&}egr;
+    }
+
+    # - list - Perl: What is the easiest way to flatten a multidimensional array? - Stack Overflow
+    # - https://stackoverflow.com/questions/5166662/perl-what-is-the-easiest-way-to-flatten-a-multidimensional-array
+    sub flat {                  # no prototype to avoid warnings
+        return map { ref eq 'ARRAY' ? flat(@$_) : $_ } @_;
+    }
+
+    sub generate_regexp_str($;$) {
+        my ($pattern, $with_paren) = @_;
+        my ($dst, $state) = &TTT::decode_string($pattern, 1);
+        $state = [] if $state == $TTT::table;
+        # XXX: TTT.table の末端の要素は空文字列か長さ 1 の文字列で、
+        # ^ や - や [ ] といった文字はないと仮定している
+        my $char_class = join('', flat(@$state));
+        $char_class = "[$char_class]" unless $char_class eq "";
+        my $re = &regexp_escape($dst) . $char_class;   # XXX: escape
+        $re = &regexp_escape($pattern) . $op_or . $re; # XXX: escape
+        $re = $op_nest_in . $re . $op_nest_out if $with_paren;
+        $re;
+    }
+
+    sub get_pattern($) {
+        my $pattern = shift;
+        my @segments = split(/\s+/, $pattern); # XXX: /\s+/
+        return &generate_regexp_str($pattern) if @segments <= 1;
+        my $re_str1 = &generate_regexp_str($pattern, 1);
+        my $re_str2 = join($op_newline, map {
+            &generate_regexp_str($_, 1)
+        } @segments);
+        $re_str1 . $op_or . $re_str2;
+    }
+};
+
+# --------------------------------------------------------------------
+# main
+
+if (__FILE__ eq $0) {
+    my ($dict, $subdict, $quiet, $vim, $emacs, $nonewline, $word, $help) = ('', '', '', '', '', '', '', '');
+    GetOptions(
+        "dict|d=s" => \$dict,
+        "subdict|s=s" => \$subdict,
+        "quiet|q" => \$quiet,
+        "vim|v" => \$vim,
+        "emacs|e" => \$emacs,
+        "nonewline|n" => \$nonewline,
+        "word|w=s" => \$word,
+        "help|h" => \$help
+       );
+    my $titeto_usage = <<"EOF";
+Usage: $0 [options]
+
+Options:
+  -d --dict <dict>      [IGNORED] Use a file <dict> for dictionary.
+  -s --subdict <dict>   [IGNORED] Sub dictionary files. (MAX 8 times)
+  -q --quiet            Show no message except results.
+  -v --vim              Use vim style regexp.
+  -e --emacs            Use emacs style regexp.
+  -n --nonewline        Don't use newline match.
+  -w --word <word>      Expand a <word> and soon exit.
+  -h --help             Show this message.
+EOF
+
+    if ($help) {
+        print STDERR $titeto_usage;
+        exit;
+    }
+
+    if ($vim) {
+        $Titeto::op_or = "\\|";
+        $Titeto::op_nest_in = "\\%(";
+        $Titeto::op_nest_out = "\\)";
+        $Titeto::op_newline = "\\_s*" unless $nonewline;
+        $Titeto::ch_meta = qr![\[\]\\.*^$~/]!;
+    } elsif ($emacs) {
+        $Titeto::op_or = "\\|";
+        $Titeto::op_nest_in = "\\(";
+        $Titeto::op_nest_out = "\\)";
+        $Titeto::op_newline = "\\s-*" unless $nonewline;
+        $Titeto::ch_meta = qr![\[\]\\.*^$~]!;
+    } else {
+        $Titeto::op_newline = "\\s*" unless $nonewline;
+    }
+
+    if ($word) {
+        print(encode('utf-8', &Titeto::get_pattern($word)));
+        exit;
+    }
+
+    print "QUERY: " unless $quiet;
+    while (<>) {
+        $_ = decode('utf-8', $_);
+        print "PATTERN: " unless $quiet;
+        chomp;
+        print(encode('utf-8', &Titeto::get_pattern($_)) . "\n");
+        # $stdout.flush
+        print "QUERY: " unless $quiet;
+    }
+
+    exit;
+}
+
+1;
