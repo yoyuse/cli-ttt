@@ -2,7 +2,7 @@
 
 # titeto --- isearch a la migemo
 
-# Copyright (C) 2021, 2023  YUSE Yosihiro
+# Copyright (C) 2021, 2023, 2025  YUSE Yosihiro
 
 # This software is released under the MIT License.
 # http://opensource.org/licenses/mit-license.php
@@ -31,8 +31,8 @@ module Titeto
 
   def generate_regexp_str(pattern, with_paren = false)
     dst, state = decode_string(pattern, true)
-    state = [] if state == TTT.table
-    # XXX: TTT.table の末端の要素は空文字列か長さ 1 の文字列で、
+    state = [] if state == @@table
+    # XXX: @@table の末端の要素は空文字列か長さ 1 の文字列で、
     # ^ や - や [ ] といった文字はないと仮定している
     char_class = state.flatten().join()
     char_class = "[#{char_class}]" unless char_class.empty?

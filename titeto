@@ -2,7 +2,7 @@
 
 # titeto --- isearch a la migemo
 
-# Copyright (C) 2024  YUSE Yosihiro
+# Copyright (C) 2024, 2025  YUSE Yosihiro
 
 # This software is released under the MIT License.
 # http://opensource.org/licenses/mit-license.php
@@ -10,6 +10,7 @@
 # --------------------------------------------------------------------
 # code
 
+use Encode qw(decode encode);
 use FindBin;
 use lib "$FindBin::Bin";
 
