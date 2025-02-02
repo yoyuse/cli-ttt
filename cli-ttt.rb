@@ -10,7 +10,7 @@
 # --------------------------------------------------------------------
 # version (used by optparse)
 
-Version = '2025-02-01'.gsub(/-/, '.')
+Version = '2025-02-02'.gsub(/-/, '.')
 
 # --------------------------------------------------------------------
 # keys and table
@@ -672,19 +672,19 @@ EOF
 
   @@batch = false
   @@help = Array.new
+  @@list = false
   @@quiet = false
-  @@separator = false
 
   def set_batch(batch)
     @@batch = batch
   end
 
-  def set_quiet(quiet)
-    @@quiet = quiet
+  def set_list(list)
+    @@list = list
   end
 
-  def set_separator(sep)
-    @@separator = sep
+  def set_quiet(quiet)
+    @@quiet = quiet
   end
 
   def invalidate_all(str)
@@ -731,7 +731,7 @@ EOF
       when 1
         c = cands[0]
       else
-        return reduce_sub(str1 + @@separator + cands.join(@@separator) + @@separator + str5) if @@separator
+        return reduce_sub(str1 + "\u{00a4}" + '/' + cands.join('/') + '/' + str5) if @@list
         return str1.gsub('%', '%%') + '%s' + str5.gsub('%', '%%') + "\n" + cands.map{ |c| c + ' ' + code_help_str(c, s) }.join("\n") if @@batch
         c = selecting_read(str1 + '[' + str3 + ']' + str5, cands)
         return invalidate_all(str) if c.nil? || c.empty?
@@ -753,20 +753,47 @@ EOF
 end
 
 # --------------------------------------------------------------------
+# spn
+
+# - 自作ゲームで日本語入力できない?なら自作すれば?: 濃密金石文
+# - http://nmksb.seesaa.net/article/486248783.html
+
+module SPN
+  @@spn_pattern = %r!(.*)(\u{00a4})/((?:.+?/){2,})(|/| |:|\d)$!
+
+  def spn(str)
+    return nil unless @@spn_pattern =~ str
+    pre, mark, ary, cmd = $1, $2, $3.chop.split('/'), $4
+    pre + case
+    when cmd.empty?
+      mark + '/' + ary.rotate.join('/') + '/'
+    when cmd == '/'
+      mark + '/' + ary.rotate(-1).join('/') + '/'
+    when cmd == ' ' || cmd == ':'
+      ary[0]
+    else
+      i = cmd.to_i
+      i == 0 ? ary[-1] : ary[i - 1]
+    end
+  end
+end
+
+# --------------------------------------------------------------------
 # main
 
 if __FILE__ == $0
   include TTT
+  include SPN
 
   require 'optparse'
-  $OPT = ARGV.getopts('bfhl:m:npqvw', 'help', 'version')
+  $OPT = ARGV.getopts('bfhlm:npqvw', 'help', 'version')
 
   $ttt_usage = <<EOF
 Usage: #{File.basename($0)} [OPTIONS] [--] [STR ...]
     -b      Batch mode
     -f      Flush line
     -h      Show usage
-    -l SEP  List candidates joined with SEP
+    -l      List candidates
     -m PAT  Decode at marker PAT
     -n      No newline
     -p      Prompt
@@ -792,12 +819,14 @@ EOF
   $marker = ''
   $marker = unescape($OPT['m']) if $OPT['m']
   set_batch($OPT['b']) if $OPT['b']
+  set_list($OPT['l']) if $OPT['l']
   set_quiet($OPT['q']) if $OPT['q']
-  set_separator(unescape($OPT['l'])) if $OPT['l']
 
   def do_ttt_args
     $stdout.sync = true if $OPT['f']
     print case
+    when !(dst = spn(ARGV[0])).nil? # XXX
+      dst
     when $OPT['b']
       reduce(decode_substring(ARGV[0])) # XXX
     when $OPT['w']
@@ -818,6 +847,8 @@ EOF
     $OPT['p'] = false unless $stdin.tty? # XXX
     while ($stderr.print "> " if $OPT['p']; str = gets) do
       print case
+      when !(dst = spn(str.chomp)).nil?
+        dst + "\n" # XXX
       when $OPT['b']
         reduce(decode_substring(str.chomp)) + "\n" # XXX
       when $OPT['w']

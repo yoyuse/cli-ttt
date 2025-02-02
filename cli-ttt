@@ -10,7 +10,7 @@
 # --------------------------------------------------------------------
 # version
 
-my $Version = '2025-02-01' =~ s/-/./gr;
+my $Version = '2025-02-02' =~ s/-/./gr;
 
 # --------------------------------------------------------------------
 # utf-8
@@ -688,19 +688,19 @@ EOF
 
     our $batch = '';
     our @help = ();
+    our $list = '';
     our $quiet = '';
-    our $separator = '';
 
     sub set_batch($) {
         $batch = shift;
     }
 
-    sub set_quiet($) {
-        $quiet = shift;
+    sub set_list($) {
+        $list = shift;
     }
 
-    sub set_separator($) {
-        $separator = shift;
+    sub set_quiet($) {
+        $quiet = shift;
     }
 
     sub invalidate_all($) {
@@ -751,7 +751,7 @@ EOF
             } elsif (@cands == 1) {
                 $c = $cands[0];
             } else {
-                return &reduce_sub($str1 . $separator . join($separator, @cands) . $separator . $str5) if $separator;
+                return &reduce_sub($str1 . "\N{U+00a4}" . '/' . join('/', @cands) . '/' . $str5) if $list;
                 return ($str1 =~ s/%/%%/gr) . '%s' . ($str5 =~ s/%/%%/gr) . "\n" . join "\n", (map { $_ . ' ' . &code_help_str($_, $s) } @cands) if $batch;
                 $c = &selecting_read($str1 . "[$str3]" . $str5, @cands);
                 return &invalidate_all($str) unless $c;
@@ -778,15 +778,45 @@ EOF
 };
 
 # --------------------------------------------------------------------
+# spn
+
+# - 自作ゲームで日本語入力できない?なら自作すれば?: 濃密金石文
+# - http://nmksb.seesaa.net/article/486248783.html
+
+package SPN {
+    our $spn_pattern = qr!(.*)(\N{U+00a4})/((?:.+?/){2,})(|/| |:|\d)$!;
+
+    sub spn($) {
+        my $str = shift;
+        return '' unless $str =~ $spn_pattern;
+        my ($pre, $mark, $cands, $cmd) = ($1, $2, $3, $4);
+        chop($cands);
+        my @ary = split('/', $cands);
+        if ($cmd eq '') {
+            my $cand = shift(@ary); push(@ary, $cand);
+            $pre . $mark . '/' . join('/', @ary) . '/';
+        } elsif ($cmd eq '/') {
+            my $cand = pop(@ary); unshift(@ary, $cand);
+            $pre . $mark . '/' . join('/', @ary) . '/';
+        } elsif ($cmd eq ' ' || $cmd eq ':') {
+            $pre . $ary[0];
+        } else {
+            my $i = $cmd + 0;
+            $pre . ($i == 0 ? $ary[-1] : $ary[$i - 1]);
+        }
+    }
+};
+
+# --------------------------------------------------------------------
 # main
 
 if (__FILE__ eq $0) {
-    my ($batch, $flush, $help, $separator, $marker, $nonewline, $prompt, $quiet, $version, $whole) = ('', '', '', '', '', '', '', '');
+    my ($batch, $flush, $help, $list, $marker, $nonewline, $prompt, $quiet, $version, $whole) = ('', '', '', '', '', '', '', '');
     GetOptions(
         'b' => \$batch,
         'f' => \$flush,
         'help|h' => \$help,
-        'l=s' => \$separator,
+        'l' => \$list,
         'm=s' => \$marker,
         'n' => \$nonewline,
         'p' => \$prompt,
@@ -802,7 +832,7 @@ Usage: $basename [OPTIONS] [--] [STR ...]
     -b      Batch mode
     -f      Flush line
     -h      Show usage
-    -l SEP  List candidates joined with SEP
+    -l      List candidates
     -m PAT  Decode at marker PAT
     -n      No newline
     -p      Prompt
@@ -830,14 +860,16 @@ EOF
 
     $marker = &unescape($marker) if $marker;
     &TTT::set_batch($batch) if $batch;
+    &TTT::set_list($list) if $list;
     &TTT::set_quiet($quiet) if $quiet;
-    &TTT::set_separator(&unescape($separator)) if $separator;
 
     sub do_ttt_args {
         $| = 1 if $flush;
         @ARGV = map { utf8::decode($_); $_ } @ARGV;
         my $dst;
-        if ($batch) {
+        if (($dst = &SPN::spn($ARGV[0])) ne '') {
+            $dst = $dst;
+        } elsif ($batch) {
             $dst = &TTT::reduce(&TTT::decode_substring($ARGV[0])); # XXX
         } elsif ($whole) {
             $dst = join ' ', map { &TTT::reduce(&TTT::decode_string($_)) } @ARGV;
@@ -863,7 +895,10 @@ EOF
         while ($str = <>) {
             utf8::decode($str);
             my $dst;
-            if ($batch) {
+            my $str_ = $str; chomp($str_);
+            if (($dst = &SPN::spn($str_)) ne '') {
+                $dst .= "\n";
+            } elsif ($batch) {
                 chomp($str);
                 $dst = &TTT::reduce(&TTT::decode_substring($str)) . "\n"; # XXX
             } elsif ($whole) {
