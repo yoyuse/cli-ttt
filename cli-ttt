@@ -20,8 +20,20 @@ use warnings;
 use utf8;
 # use Encode qw(decode encode);
 use File::Basename;
-use Getopt::Long qw(:config posix_default no_ignore_case gnu_compat);
+use Getopt::Long qw(:config posix_default no_ignore_case bundling);
 use open ':encoding(utf8)';
+
+# - Perlでコマンドラインオプションの解析に Getopt::Long を使う時、絶対に忘れてはいけない引数 - たごもりすメモ
+# - https://tagomoris.hatenablog.com/entry/20120918/1347991165
+
+# - おそらくはそれさえも平凡な日々: 2013年のGetopt::Long
+# - https://songmu.jp/riji/archives/2013/02/2013getoptlong.html
+
+# - perlのGetopt::Longを使った感想 - yukke::note
+# - https://yukke.hateblo.jp/entry/2012/10/25/172121
+
+# - Getopt::Long - Extended processing of command line options - Perldoc Browser
+# - https://perldoc.perl.org/Getopt::Long
 
 # --------------------------------------------------------------------
 # keys and table
