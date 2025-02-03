@@ -10,7 +10,7 @@
 # --------------------------------------------------------------------
 # version (used by optparse)
 
-Version = '2025-02-02'.gsub(/-/, '.')
+Version = '2025-02-03'.gsub(/-/, '.')
 
 # --------------------------------------------------------------------
 # keys and table
@@ -759,11 +759,13 @@ end
 # - http://nmksb.seesaa.net/article/486248783.html
 
 module SPN
-  @@spn_pattern = %r!(.*)(\u{00a4})/((?:.+?/){2,})(|/| |:|\d)$!
+  @@spn_pattern = %r!(.*)(\u{00a4})/((?:.+?/){2,})(|/| |:|-?\d+)$!
 
   def spn(str)
     return nil unless @@spn_pattern =~ str
     pre, mark, ary, cmd = $1, $2, $3.chop.split('/'), $4
+    i = cmd.to_i
+    n = ary.length
     pre + case
     when cmd.empty?
       mark + '/' + ary.rotate.join('/') + '/'
@@ -771,9 +773,13 @@ module SPN
       mark + '/' + ary.rotate(-1).join('/') + '/'
     when cmd == ' ' || cmd == ':'
       ary[0]
+    when (-n .. -1) === i
+      # 負数は右から数える. i == -1 と i == 0 は同じ意味
+      ary[i]
+    when (0 .. n) === i
+      ary[i - 1]
     else
-      i = cmd.to_i
-      i == 0 ? ary[-1] : ary[i - 1]
+      str
     end
   end
 end

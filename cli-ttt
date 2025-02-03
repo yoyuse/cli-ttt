@@ -10,7 +10,7 @@
 # --------------------------------------------------------------------
 # version
 
-my $Version = '2025-02-02' =~ s/-/./gr;
+my $Version = '2025-02-03' =~ s/-/./gr;
 
 # --------------------------------------------------------------------
 # utf-8
@@ -784,7 +784,7 @@ EOF
 # - http://nmksb.seesaa.net/article/486248783.html
 
 package SPN {
-    our $spn_pattern = qr!(.*)(\N{U+00a4})/((?:.+?/){2,})(|/| |:|\d)$!;
+    our $spn_pattern = qr!(.*)(\N{U+00a4})/((?:.+?/){2,})(|/| |:|-?\d+)$!;
 
     sub spn($) {
         my $str = shift;
@@ -792,6 +792,8 @@ package SPN {
         my ($pre, $mark, $cands, $cmd) = ($1, $2, $3, $4);
         chop($cands);
         my @ary = split('/', $cands);
+        my $i = $cmd =~ m/-?\d+/ ? $cmd + 0 : 0;
+        my $n = @ary;
         if ($cmd eq '') {
             my $cand = shift(@ary); push(@ary, $cand);
             $pre . $mark . '/' . join('/', @ary) . '/';
@@ -800,9 +802,13 @@ package SPN {
             $pre . $mark . '/' . join('/', @ary) . '/';
         } elsif ($cmd eq ' ' || $cmd eq ':') {
             $pre . $ary[0];
+        } elsif (-$n <= $i && $i <= -1) {
+            # 負数は右から数える. i == -1 と i == 0 は同じ意味
+            $pre . $ary[$i];
+        } elsif (0 <= $i && $i <= $n) {
+            $pre . $ary[$i - 1];
         } else {
-            my $i = $cmd + 0;
-            $pre . ($i == 0 ? $ary[-1] : $ary[$i - 1]);
+            $str;
         }
     }
 };

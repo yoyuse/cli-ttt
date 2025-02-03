@@ -2,6 +2,7 @@
 
 == Under Git control
 
+- 2025-02-03 feat: accept minus number
 - 2025-02-02 feat: SPN method
 - 2025-02-02 fix: for cli-ttt 2025.02.01
 - 2025-02-01 feat: aux conversions
