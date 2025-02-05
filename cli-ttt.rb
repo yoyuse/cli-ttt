@@ -733,12 +733,12 @@ EOF
 
   def reduce_sub(str)
     if /(.+) (|\n|\r|\r\n)\z/ =~ str && 0 < @@decode_length
-      s, nl = $1, $2
+      pre, s, nl = $`, $1, $2
       n = @@decode_length
-      return s[0 .. -n - 1] + postfix_conversion(s[-n .. -1]) + nl
+      return pre + s[0 .. -n - 1] + postfix_conversion(s[-n .. -1]) + nl
     end
-    return invalidate_all(str) unless /(.*)(\u{00a4}[◆◇])(.*?)([—・ ]|$)(.*\n?)/ =~ str # XXX: \n?
-    str1, str2, str3, str4, str5  = $1, $2, $3, $4, $5
+    return invalidate_all(str) unless /(.*)(\u{00a4}[◆◇])(.*?)([—・ ]|$)(.*\n?)\z/ =~ str # XXX: \n?
+    str1, str2, str3, str4, str5  = $` + $1, $2, $3, $4, $5
     ls = (str3 + str4 + str5).split(//)
     case str2
     when "\u{00a4}◆"
@@ -790,11 +790,13 @@ end
 # - http://nmksb.seesaa.net/article/486248783.html
 
 module SPN
-  @@spn_pattern = %r!(.*)(\u{00a4})/((?:.+?/){2,})(|/| |:|-?\d+)$!
+  # @@spn_pattern = %r!(.*)(\u{00a4})/((?:.+?/){2,})(|/| |:|-?\d+)$!
+  @@spn_pattern = %r!(\u{00a4})/((?:.+?/){2,})(|/| |:|-?\d+)\z!
 
   def spn(str)
     return nil unless @@spn_pattern =~ str
-    pre, mark, ary, cmd = $1, $2, $3.chop.split('/'), $4
+    # pre, mark, ary, cmd = $1, $2, $3.chop.split('/'), $4
+    pre, mark, ary, cmd = $`, $1, $2.chop.split('/'), $3
     i = cmd.to_i
     n = ary.length
     pre + case

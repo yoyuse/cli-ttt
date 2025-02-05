@@ -1,6 +1,6 @@
 function zsh-ttt() {
     local rbuf="$RBUFFER"
-    BUFFER=$(cli-ttt -l -q <<< "$LBUFFER")
+    BUFFER=$(cli-ttt -l -q -- "$LBUFFER")
     CURSOR=$#BUFFER
     BUFFER="$BUFFER$rbuf"
 }

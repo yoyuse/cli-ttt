@@ -764,12 +764,12 @@ EOF
     sub reduce_sub($) {
         my $str = shift;
         if ($str =~ m/(.+) (|\n|\r|\r\n)\z/ && 0 < $decode_length) {
-            my ($s, $nl) = ($1, $2);
+            my ($pre, $s, $nl) = ($`, $1, $2);
             my $n = $decode_length;
-            return substr($s, 0, length($s) - $n) . &postfix_conversion(substr($s, -$n)) . $nl;
+            return $pre . substr($s, 0, length($s) - $n) . &postfix_conversion(substr($s, -$n)) . $nl;
         }
-        return &invalidate_all($str) unless $str =~ m/(.*)(\N{U+00a4}[◆◇])(.*?)([—・ ]|$)(.*\n?)/; # XXX: \n?
-        my ($str1, $str2, $str3, $str4, $str5) = ($1, $2, $3, $4, $5);
+        return &invalidate_all($str) unless $str =~ m/(.*)(\N{U+00a4}[◆◇])(.*?)([—・ ]|$)(.*\n?)\z/; # XXX: \n?
+        my ($str1, $str2, $str3, $str4, $str5) = ($` . $1, $2, $3, $4, $5);
         my @ls = split '', ($str3 . $str4 . $str5);
         if ($str2 eq "\N{U+00a4}◆") {
             return &invalidate_all($str) if @ls < 2;
@@ -825,12 +825,14 @@ EOF
 # - http://nmksb.seesaa.net/article/486248783.html
 
 package SPN {
-    our $spn_pattern = qr!(.*)(\N{U+00a4})/((?:.+?/){2,})(|/| |:|-?\d+)$!;
+    # our $spn_pattern = qr!(.*)(\N{U+00a4})/((?:.+?/){2,})(|/| |:|-?\d+)$!;
+    our $spn_pattern = qr!(\N{U+00a4})/((?:.+?/){2,})(|/| |:|-?\d+)\z!;
 
     sub spn($) {
         my $str = shift;
         return '' unless $str =~ $spn_pattern;
-        my ($pre, $mark, $cands, $cmd) = ($1, $2, $3, $4);
+        # my ($pre, $mark, $cands, $cmd) = ($1, $2, $3, $4);
+        my ($pre, $mark, $cands, $cmd) = ($`, $1, $2, $3);
         chop($cands);
         my @ary = split('/', $cands);
         my $i = $cmd =~ m/-?\d+/ ? $cmd + 0 : 0;
