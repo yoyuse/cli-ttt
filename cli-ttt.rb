@@ -10,7 +10,7 @@
 # --------------------------------------------------------------------
 # version (used by optparse)
 
-Version = '2025-02-03'.gsub(/-/, '.')
+Version = '2025-02-05'.gsub(/-/, '.')
 
 # --------------------------------------------------------------------
 # keys and table
@@ -264,8 +264,12 @@ EOF
   # ------------------------------------------------------------------
   # main conversion
 
+  @@decode_length = nil
+
   def decode_string(str, with_state = false)
     make_table unless @@ready
+
+    @@decode_length = 0
 
     code = str.split(//)
     t = @@table
@@ -294,6 +298,7 @@ EOF
       end
     end
 
+    @@decode_length = dst.length
     with_state ? [dst, t] : dst
   end
 
@@ -705,7 +710,33 @@ EOF
     cands[i]
   end
 
+  def postfix_conversion(str)
+    ls = str.split(//)
+    cands = maze_look(str)
+    case ls.length
+    when 1
+      cands = itaiji_look(str) + cands
+    when 2
+      c = bushu_look(ls[0], ls[1])
+      cands.unshift(c[0]) if 0 < c.length
+    end
+    cands = cands.uniq
+    case cands.length
+    when 0
+      str
+    when 1
+      cands[0]
+    else
+      "\u{00a4}" + '/' + cands.join('/') + '/'
+     end
+  end
+
   def reduce_sub(str)
+    if /(.+) (|\n|\r|\r\n)\z/ =~ str && 0 < @@decode_length
+      s, nl = $1, $2
+      n = @@decode_length
+      return s[0 .. -n - 1] + postfix_conversion(s[-n .. -1]) + nl
+    end
     return invalidate_all(str) unless /(.*)(\u{00a4}[◆◇])(.*?)([—・ ]|$)(.*\n?)/ =~ str # XXX: \n?
     str1, str2, str3, str4, str5  = $1, $2, $3, $4, $5
     ls = (str3 + str4 + str5).split(//)
@@ -724,7 +755,7 @@ EOF
       s = str3
       inflection = str4 == '—' ? true : str4 == '・' ? false : nil
       cands = itaiji_look(s) + maze_look(s, inflection)
-      cands = cands.uniq.filter { |c| c != s }
+      cands = cands.uniq # .filter { |c| c != s } # XXX: この filter は必要???
       case cands.length
       when 0
         return invalidate_all(str)

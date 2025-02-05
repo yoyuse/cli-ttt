@@ -10,7 +10,7 @@
 # --------------------------------------------------------------------
 # version
 
-my $Version = '2025-02-03' =~ s/-/./gr;
+my $Version = '2025-02-05' =~ s/-/./gr;
 
 # --------------------------------------------------------------------
 # utf-8
@@ -284,8 +284,11 @@ EOF
     # ----------------------------------------------------------------
     # main conversion
 
+    our $decode_length = '';
+
     sub decode_string($;$) {
         &make_table() unless $ready;
+        $decode_length = 0;
         my ($str, $with_state) = @_;
         my $t = $table;
         my $dst = "";
@@ -304,6 +307,7 @@ EOF
                 }
             }
         }
+        $decode_length = length($dst);
         $with_state ? ($dst, $t) : $dst;
     }
 
@@ -737,8 +741,33 @@ EOF
         $cands[$i];
     }
 
+    sub postfix_conversion($) {
+        my $str = shift;
+        my @ls = split('', $str);
+        my @cands = &maze_look($str);
+        if (@ls == 1) {
+            @cands = (&itaiji_look($str), @cands);
+        } elsif (@ls == 2) {
+            my @c = &bushu_look($ls[0], $ls[1]);
+            unshift(@cands, $c[0]) if 0 < @c;
+        }
+        @cands = &uniq(@cands);
+        if (@cands == 0) {
+            $str;
+        } elsif (@cands == 1) {
+            $cands[0];
+        } else {
+            "\N{U+00a4}" . '/' . join('/', @cands) . '/'
+        }
+    }
+
     sub reduce_sub($) {
         my $str = shift;
+        if ($str =~ m/(.+) (|\n|\r|\r\n)\z/ && 0 < $decode_length) {
+            my ($s, $nl) = ($1, $2);
+            my $n = $decode_length;
+            return substr($s, 0, length($s) - $n) . &postfix_conversion(substr($s, -$n)) . $nl;
+        }
         return &invalidate_all($str) unless $str =~ m/(.*)(\N{U+00a4}[◆◇])(.*?)([—・ ]|$)(.*\n?)/; # XXX: \n?
         my ($str1, $str2, $str3, $str4, $str5) = ($1, $2, $3, $4, $5);
         my @ls = split '', ($str3 . $str4 . $str5);
@@ -756,7 +785,7 @@ EOF
             my $s = $str3;
             my $inflection = $str4 eq '—' ? 'true' : $str4 eq '・' ? 'false' : '';
             my @cands = &uniq(&itaiji_look($s), &maze_look($s, $inflection));
-            @cands = grep { $_ ne $s } @cands;
+            # @cands = grep { $_ ne $s } @cands; # XXX: この grep は必要???
             my $c;
             if (@cands == 0) {
                 return &invalidate_all($str);
