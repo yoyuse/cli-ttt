@@ -789,7 +789,8 @@ end
 # - http://nmksb.seesaa.net/article/486248783.html
 
 module SPN
-  @@spn_pattern = %r!(\u{00a4})/((?:.+?/){2,})(|/| |:|-?\d+)\z!
+  # @@spn_pattern = %r!(\u{00a4})/((?:.+?/){2,})(|/| |:|-?\d+)\z!
+  @@spn_pattern = %r!(\u{00a4})/((?:[^\s:]+?/){2,})(|/| |-?\d+)\z!
 
   def spn(str)
     return nil unless @@spn_pattern =~ str

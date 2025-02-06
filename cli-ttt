@@ -814,7 +814,8 @@ EOF
 # - http://nmksb.seesaa.net/article/486248783.html
 
 package SPN {
-    our $spn_pattern = qr!(\N{U+00a4})/((?:.+?/){2,})(|/| |:|-?\d+)\z!;
+    # our $spn_pattern = qr!(\N{U+00a4})/((?:.+?/){2,})(|/| |:|-?\d+)\z!;
+    our $spn_pattern = qr!(\N{U+00a4})/((?:[^\s:]+?/){2,})(|/| |-?\d+)\z!;
 
     sub spn($) {
         my $str = shift;
