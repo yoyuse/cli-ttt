@@ -2,6 +2,7 @@
 
 == Under Git control
 
+- 2025-02-06 refactor
 - 2025-02-05 fix: fix for zed
 - 2025-02-05 feat: postfix aux conversion
 - 2025-02-03 fix: use `bundling`, no `gnu_compat` for `use Getopt::Long`

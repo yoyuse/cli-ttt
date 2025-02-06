@@ -10,7 +10,7 @@
 # --------------------------------------------------------------------
 # version
 
-my $Version = '2025-02-05' =~ s/-/./gr;
+my $Version = '2025-02-06' =~ s/-/./gr;
 
 # --------------------------------------------------------------------
 # utf-8
@@ -22,18 +22,6 @@ use utf8;
 use File::Basename;
 use Getopt::Long qw(:config posix_default no_ignore_case bundling);
 use open ':encoding(utf8)';
-
-# - Perlでコマンドラインオプションの解析に Getopt::Long を使う時、絶対に忘れてはいけない引数 - たごもりすメモ
-# - https://tagomoris.hatenablog.com/entry/20120918/1347991165
-
-# - おそらくはそれさえも平凡な日々: 2013年のGetopt::Long
-# - https://songmu.jp/riji/archives/2013/02/2013getoptlong.html
-
-# - perlのGetopt::Longを使った感想 - yukke::note
-# - https://yukke.hateblo.jp/entry/2012/10/25/172121
-
-# - Getopt::Long - Extended processing of command line options - Perldoc Browser
-# - https://perldoc.perl.org/Getopt::Long
 
 # --------------------------------------------------------------------
 # keys and table
@@ -442,7 +430,7 @@ EOF
 
     sub make_code_help($) {
         my $code = shift;
-        '<' . ($code ? $code : '--') . '>'; # XXX: '--'
+        '<' . ($code ne '' ? $code : '--') . '>'; # XXX: '--'
     }
 
     sub code_help_ch($;$) {
@@ -784,8 +772,9 @@ EOF
             return &invalidate_all($str) if @ls < 1;
             my $s = $str3;
             my $inflection = $str4 eq '—' ? 'true' : $str4 eq '・' ? 'false' : '';
-            my @cands = &uniq(&itaiji_look($s), &maze_look($s, $inflection));
-            # @cands = grep { $_ ne $s } @cands; # XXX: この grep は必要???
+            my @cands = &maze_look($s, $inflection);
+            @cands = (&itaiji_look($s), @cands) if length($s) == 1;
+            @cands = &uniq(@cands);
             my $c;
             if (@cands == 0) {
                 return &invalidate_all($str);
@@ -825,13 +814,11 @@ EOF
 # - http://nmksb.seesaa.net/article/486248783.html
 
 package SPN {
-    # our $spn_pattern = qr!(.*)(\N{U+00a4})/((?:.+?/){2,})(|/| |:|-?\d+)$!;
     our $spn_pattern = qr!(\N{U+00a4})/((?:.+?/){2,})(|/| |:|-?\d+)\z!;
 
     sub spn($) {
         my $str = shift;
         return '' unless $str =~ $spn_pattern;
-        # my ($pre, $mark, $cands, $cmd) = ($1, $2, $3, $4);
         my ($pre, $mark, $cands, $cmd) = ($`, $1, $2, $3);
         chop($cands);
         my @ary = split('/', $cands);

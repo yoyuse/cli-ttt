@@ -10,7 +10,7 @@
 # --------------------------------------------------------------------
 # version (used by optparse)
 
-Version = '2025-02-05'.gsub(/-/, '.')
+Version = '2025-02-06'.gsub(/-/, '.')
 
 # --------------------------------------------------------------------
 # keys and table
@@ -235,8 +235,6 @@ EOF
 須乱降均笑*****対ュテ機第巨ぞ念効普京方つ電長平信校約ョ西ウ政目都意口食価反
 訳香走又弁*****歴作見チ入敗塚働視辺ちフ四地み楽午ご各光げグオ市株今台総与ズ
 EOF
-
-  # ギ # % match hack
 
   @@ready = false
 
@@ -754,8 +752,9 @@ EOF
       return invalidate_all(str) if ls.length < 1
       s = str3
       inflection = str4 == '—' ? true : str4 == '・' ? false : nil
-      cands = itaiji_look(s) + maze_look(s, inflection)
-      cands = cands.uniq # .filter { |c| c != s } # XXX: この filter は必要???
+      cands = maze_look(s, inflection)
+      cands = itaiji_look(s) + cands if s.length == 1
+      cands = cands.uniq
       case cands.length
       when 0
         return invalidate_all(str)
@@ -790,12 +789,10 @@ end
 # - http://nmksb.seesaa.net/article/486248783.html
 
 module SPN
-  # @@spn_pattern = %r!(.*)(\u{00a4})/((?:.+?/){2,})(|/| |:|-?\d+)$!
   @@spn_pattern = %r!(\u{00a4})/((?:.+?/){2,})(|/| |:|-?\d+)\z!
 
   def spn(str)
     return nil unless @@spn_pattern =~ str
-    # pre, mark, ary, cmd = $1, $2, $3.chop.split('/'), $4
     pre, mark, ary, cmd = $`, $1, $2.chop.split('/'), $3
     i = cmd.to_i
     n = ary.length
