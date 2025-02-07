@@ -2,6 +2,7 @@
 
 == Under Git control
 
+- 2025-02-07 fix: repaint prompt with `zle reset-prompt`
 - 2025-02-07 feat: see environment variable CLI_TTT_COMMAND
 - 2025-02-07 feat: spn code help; merge SPN with TTT
 - 2025-02-06 fix: spn candidate should not include space or colon

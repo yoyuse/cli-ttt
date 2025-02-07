@@ -4,6 +4,7 @@ function zsh-ttt() {
     BUFFER=$(${=CLI_TTT_COMMAND} "$LBUFFER")
     CURSOR=$#BUFFER
     BUFFER="$BUFFER$rbuf"
+    zle && zle reset-prompt
 }
 
 zle -N zsh-ttt
