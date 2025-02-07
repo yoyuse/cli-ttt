@@ -10,7 +10,7 @@
 # --------------------------------------------------------------------
 # version (used by optparse)
 
-Version = '2025-02-06'.gsub(/-/, '.')
+Version = '2025-02-07'.gsub(/-/, '.')
 
 # --------------------------------------------------------------------
 # keys and table
@@ -404,6 +404,7 @@ EOF
   end
 
   def rev__make_revtable
+    make_table unless @@ready
     rev__make_revtable_sub(@@table)
     @@rev__ready = true
   end
@@ -723,6 +724,7 @@ EOF
     when 0
       str
     when 1
+      @@help.push(code_help_str(cands[0], str)) unless @@quiet
       cands[0]
     else
       "\u{00a4}" + '/' + cands.join('/') + '/'
@@ -780,38 +782,42 @@ EOF
     $stderr.puts(@@help.reverse.join(' ')) if !@@quiet && !@@help.empty?
     ret
   end
-end
 
-# --------------------------------------------------------------------
-# spn
+  # ------------------------------------------------------------------
+  # spn
 
-# - 自作ゲームで日本語入力できない?なら自作すれば?: 濃密金石文
-# - http://nmksb.seesaa.net/article/486248783.html
+  # - 自作ゲームで日本語入力できない?なら自作すれば?: 濃密金石文
+  # - http://nmksb.seesaa.net/article/486248783.html
 
-module SPN
   # @@spn_pattern = %r!(\u{00a4})/((?:.+?/){2,})(|/| |:|-?\d+)\z!
   @@spn_pattern = %r!(\u{00a4})/((?:[^\s:]+?/){2,})(|/| |-?\d+)\z!
 
   def spn(str)
     return nil unless @@spn_pattern =~ str
+    @@help.clear unless @@quiet
     pre, mark, ary, cmd = $`, $1, $2.chop.split('/'), $3
     i = cmd.to_i
     n = ary.length
-    pre + case
+    ret = pre + case
     when cmd.empty?
       mark + '/' + ary.rotate.join('/') + '/'
     when cmd == '/'
       mark + '/' + ary.rotate(-1).join('/') + '/'
-    when cmd == ' ' || cmd == ':'
+    when cmd == ' '
+      @@help.push(code_help_str(ary[0])) unless @@quiet
       ary[0]
     when (-n .. -1) === i
       # 負数は右から数える. i == -1 と i == 0 は同じ意味
+      @@help.push(code_help_str(ary[i])) unless @@quiet
       ary[i]
     when (0 .. n) === i
+      @@help.push(code_help_str(ary[i - 1])) unless @@quiet
       ary[i - 1]
     else
       str
     end
+    $stderr.puts(@@help.reverse.join(' ')) unless @@quiet || @@help.empty?
+    ret
   end
 end
 
@@ -820,7 +826,6 @@ end
 
 if __FILE__ == $0
   include TTT
-  include SPN
 
   require 'optparse'
   $OPT = ARGV.getopts('bfhlm:npqvw', 'help', 'version')

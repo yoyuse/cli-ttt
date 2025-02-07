@@ -10,7 +10,7 @@
 # --------------------------------------------------------------------
 # version
 
-my $Version = '2025-02-06' =~ s/-/./gr;
+my $Version = '2025-02-07' =~ s/-/./gr;
 
 # --------------------------------------------------------------------
 # utf-8
@@ -275,7 +275,7 @@ EOF
     our $decode_length = '';
 
     sub decode_string($;$) {
-        &make_table() unless $ready;
+        &make_table unless $ready;
         $decode_length = 0;
         my ($str, $with_state) = @_;
         my $t = $table;
@@ -408,6 +408,7 @@ EOF
     }
 
     sub rev__make_revtable {
+        &make_table unless $ready;
         &rev__make_revtable_sub($TTT::table);
         $rev__ready = 1;
     }
@@ -743,6 +744,7 @@ EOF
         if (@cands == 0) {
             $str;
         } elsif (@cands == 1) {
+            push @help, &code_help_str($cands[0], $str) unless $quiet;
             $cands[0];
         } else {
             "\N{U+00a4}" . '/' . join('/', @cands) . '/'
@@ -805,42 +807,51 @@ EOF
         }
         $ret;
     }
-};
 
-# --------------------------------------------------------------------
-# spn
+    # ----------------------------------------------------------------
+    # spn
 
-# - 自作ゲームで日本語入力できない?なら自作すれば?: 濃密金石文
-# - http://nmksb.seesaa.net/article/486248783.html
+    # - 自作ゲームで日本語入力できない?なら自作すれば?: 濃密金石文
+    # - http://nmksb.seesaa.net/article/486248783.html
 
-package SPN {
     # our $spn_pattern = qr!(\N{U+00a4})/((?:.+?/){2,})(|/| |:|-?\d+)\z!;
     our $spn_pattern = qr!(\N{U+00a4})/((?:[^\s:]+?/){2,})(|/| |-?\d+)\z!;
 
     sub spn($) {
         my $str = shift;
         return '' unless $str =~ $spn_pattern;
+        @help = () unless $quiet;
         my ($pre, $mark, $cands, $cmd) = ($`, $1, $2, $3);
         chop($cands);
         my @ary = split('/', $cands);
         my $i = $cmd =~ m/-?\d+/ ? $cmd + 0 : 0;
         my $n = @ary;
+        my $ret;
         if ($cmd eq '') {
             my $cand = shift(@ary); push(@ary, $cand);
-            $pre . $mark . '/' . join('/', @ary) . '/';
+            $ret = $pre . $mark . '/' . join('/', @ary) . '/';
         } elsif ($cmd eq '/') {
             my $cand = pop(@ary); unshift(@ary, $cand);
-            $pre . $mark . '/' . join('/', @ary) . '/';
-        } elsif ($cmd eq ' ' || $cmd eq ':') {
-            $pre . $ary[0];
+            $ret = $pre . $mark . '/' . join('/', @ary) . '/';
+        } elsif ($cmd eq ' ') {
+            push @help, &code_help_str($ary[0]) unless $quiet;
+            $ret = $pre . $ary[0];
         } elsif (-$n <= $i && $i <= -1) {
             # 負数は右から数える. i == -1 と i == 0 は同じ意味
-            $pre . $ary[$i];
+            push @help, &code_help_str($ary[$i]) unless $quiet;
+            $ret = $pre . $ary[$i];
         } elsif (0 <= $i && $i <= $n) {
-            $pre . $ary[$i - 1];
+            push @help, &code_help_str($ary[$i - 1]) unless $quiet;
+            $ret = $pre . $ary[$i - 1];
         } else {
-            $str;
+            $ret = $str;
         }
+        unless ($quiet || @help == 0) {
+            my $help = join ' ', reverse(@help);
+            utf8::encode($help);
+            print STDERR $help . "\n";
+        }
+        $ret;
     }
 };
 
@@ -904,7 +915,7 @@ EOF
         $| = 1 if $flush;
         @ARGV = map { utf8::decode($_); $_ } @ARGV;
         my $dst;
-        if (($dst = &SPN::spn($ARGV[0])) ne '') {
+        if (($dst = &TTT::spn($ARGV[0])) ne '') {
             $dst = $dst;
         } elsif ($batch) {
             $dst = &TTT::reduce(&TTT::decode_substring($ARGV[0])); # XXX
@@ -933,7 +944,7 @@ EOF
             utf8::decode($str);
             my $dst;
             my $str_ = $str; chomp($str_);
-            if (($dst = &SPN::spn($str_)) ne '') {
+            if (($dst = &TTT::spn($str_)) ne '') {
                 $dst .= "\n";
             } elsif ($batch) {
                 chomp($str);
