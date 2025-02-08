@@ -10,7 +10,7 @@
 # --------------------------------------------------------------------
 # version (used by optparse)
 
-Version = '2025-02-07'.gsub(/-/, '.')
+Version = '2025-02-08'.gsub(/-/, '.')
 
 # --------------------------------------------------------------------
 # keys and table
@@ -850,7 +850,7 @@ EOF
   end
 
   if $OPT['h'] || $OPT['help']
-    $stderr.puts $ttt_usage
+    puts $ttt_usage
     exit
   end
 
