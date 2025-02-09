@@ -10,7 +10,7 @@
 # --------------------------------------------------------------------
 # version (used by optparse)
 
-Version = '2025-02-08'.gsub(/-/, '.')
+Version = '2025-02-09'.tr('-', '.')
 
 # --------------------------------------------------------------------
 # keys and table
@@ -18,7 +18,7 @@ Version = '2025-02-08'.gsub(/-/, '.')
 module TTT
   @@keys = "1234567890qwertyuiopasdfghjkl;zxcvbnm,./"
   @@delimiter = ":"
-  @@pattern = %r(^(.*?)(:?([0-9a-z;,./]+))([^0-9a-z;,./]*)$)
+  @@pattern = %r(\A(.*?)(:?([0-9a-z;,./]+))([^0-9a-z;,./]*)\z)
   @@table = nil
 
   @@ttw = <<'EOF'
@@ -590,17 +590,17 @@ EOF
     @@maze__yom = lines.map { |line|
       line.chomp!
       ls = line.split(/\s+/)
-      next if /^;;;/ =~ line
+      next if /\A;;;/ =~ line
       case ls.length
       when 1
-        cand = line.gsub(/(.)<(.+?)>/, '\1').sub(/—$/, '')
+        cand = line.gsub(/(.)<(.+?)>/, '\1').sub(/—\z/, '')
         re = line.gsub(/(.)<(.+?)>/, '(\1|\2)')
-        re = Regexp.new("^#{re}$")
+        re = Regexp.new('\A' + re + '\z')
         [re, cand]
       when 2
-        cand = ls[1].sub(/—$/, '')
+        cand = ls[1].sub(/—\z/, '')
         re = ls[0]
-        re = Regexp.new("^#{re}$")
+        re = Regexp.new('\A' + re + '\z')
         [re, cand]
       end
     }
@@ -737,8 +737,10 @@ EOF
       n = @@decode_length
       return pre + s[0 .. -n - 1] + postfix_conversion(s[-n .. -1]) + nl
     end
-    return invalidate_all(str) unless /(.*)(\u{00a4}[◆◇])(.*?)([—・ ]|$)(.*\n?)\z/ =~ str # XXX: \n?
-    str1, str2, str3, str4, str5  = $` + $1, $2, $3, $4, $5
+    # return invalidate_all(str) unless /(.*)(\u{00a4}[◆◇])(.*?)([—・ ]|\z)(.*\n?)\z/ =~ str # XXX: \n?
+    # str1, str2, str3, str4, str5  = $` + $1, $2, $3, $4, $5
+    return invalidate_all(str) unless /(.*)(\u{00a4}[◆◇])(.*?)(—|・|\Z)(.*)/ =~ str
+    str1, str2, str3, str4, str5  = $` + $1, $2, $3, $4, $5 + $' # $' == "", "\n", "\r", "\r\n", …
     ls = (str3 + str4 + str5).split(//)
     case str2
     when "\u{00a4}◆"

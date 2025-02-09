@@ -10,7 +10,7 @@
 # --------------------------------------------------------------------
 # version
 
-my $Version = '2025-02-08' =~ s/-/./gr;
+my $Version = '2025-02-09' =~ y/-/./r;
 
 # --------------------------------------------------------------------
 # utf-8
@@ -29,7 +29,7 @@ use open ':encoding(utf8)';
 package TTT {
     our $keys = "1234567890qwertyuiopasdfghjkl;zxcvbnm,./";
     our $delimiter = ":";
-    our $pattern = qr(^(.*?)(:?([0-9a-z;,./]+))([^0-9a-z;,./]*)$);
+    our $pattern = qr(\A(.*?)(:?([0-9a-z;,./]+))([^0-9a-z;,./]*)\z);
     our $table;
 
     my $ttw = <<'EOF';
@@ -365,7 +365,7 @@ EOF
 
     sub dic_paths(@) {
         my @files = @_;
-        map { m/^\// ? $_ : $dic_home . '/' . $_ } @files;
+        map { m/\A\// ? $_ : $dic_home . '/' . $_ } @files;
     }
 
     sub dic_files($@) {
@@ -603,16 +603,16 @@ EOF
         for my $line (@lines) {
             chomp($line);
             my @ls = split(/\s+/, $line);
-            next if $line =~ /^;;;/;
+            next if $line =~ /\A;;;/;
             if (@ls == 1) {
-                my $cand = $line =~ s/(.)<(.+?)>/$1/gr =~ s/—$//r;
+                my $cand = $line =~ s/(.)<(.+?)>/$1/gr =~ s/—\z//r;
                 my $re = $line =~ s/(.)<(.+?)>/($1|$2)/gr;
-                $re = qr(^$re$);
+                $re = qr(\A$re\z);
                 push @maze__yom, [$re, $cand];
             } elsif (@ls == 2) {
-                my $cand = $ls[1] =~ s/—$//r;
+                my $cand = $ls[1] =~ s/—\z//r;
                 my $re = $ls[0];
-                $re = qr(^$re$);
+                $re = qr(\A$re\z);
                 push @maze__yom, [$re, $cand];
             }
         }
@@ -758,8 +758,10 @@ EOF
             my $n = $decode_length;
             return $pre . substr($s, 0, length($s) - $n) . &postfix_conversion(substr($s, -$n)) . $nl;
         }
-        return &invalidate_all($str) unless $str =~ m/(.*)(\N{U+00a4}[◆◇])(.*?)([—・ ]|$)(.*\n?)\z/; # XXX: \n?
-        my ($str1, $str2, $str3, $str4, $str5) = ($` . $1, $2, $3, $4, $5);
+        # return &invalidate_all($str) unless $str =~ m/(.*)(\N{U+00a4}[◆◇])(.*?)([—・ ]|\z)(.*\n?)\z/; # XXX: \n?
+        # my ($str1, $str2, $str3, $str4, $str5) = ($` . $1, $2, $3, $4, $5);
+        return &invalidate_all($str) unless $str =~ m/(.*)(\N{U+00a4}[◆◇])(.*?)(—|・|\Z)(.*)/;
+        my ($str1, $str2, $str3, $str4, $str5) = ($` . $1, $2, $3, $4, $5 . $');
         my @ls = split '', ($str3 . $str4 . $str5);
         if ($str2 eq "\N{U+00a4}◆") {
             return &invalidate_all($str) if @ls < 2;
