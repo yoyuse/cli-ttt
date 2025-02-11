@@ -16,6 +16,8 @@ Version = '2025-02-11'.tr('-', '.')
 # keys and table
 
 module TTT
+  module_function
+
   @@keys = "1234567890qwertyuiopasdfghjkl;zxcvbnm,./"
   @@delimiter = ":"
   @@pattern = %r(\A(.*?)(:?([0-9a-z;,./]+))([^0-9a-z;,./]*)\z)
@@ -367,7 +369,7 @@ EOF
     }
   end
 
-  def self.dic_files(env_var, defaults)
+  def dic_files(env_var, defaults)
     val = ENV[env_var]
     if !val.nil?
       val.split(':', -1).map { |e| e.empty? ? defaults : e }.flatten
@@ -843,7 +845,7 @@ end
 # main
 
 if __FILE__ == $0
-  include TTT
+  # include TTT
 
   require 'optparse'
   $OPT = ARGV.getopts('bfhilm:npqvw', 'help', 'version')
@@ -879,29 +881,29 @@ EOF
 
   $marker = ''
   $marker = unescape($OPT['m']) if $OPT['m']
-  set_batch($OPT['b']) if $OPT['b']
-  set_ihelp($OPT['i']) if $OPT['i']
-  set_list($OPT['l']) if $OPT['l']
-  set_quiet($OPT['q']) if $OPT['q']
+  TTT.set_batch($OPT['b']) if $OPT['b']
+  TTT.set_ihelp($OPT['i']) if $OPT['i']
+  TTT.set_list($OPT['l']) if $OPT['l']
+  TTT.set_quiet($OPT['q']) if $OPT['q']
 
   def do_ttt_args
     $stdout.sync = true if $OPT['f']
     print case
-    when !(dst = clear_ihelp(ARGV[0])).nil? # XXX
+    when !(dst = TTT.clear_ihelp(ARGV[0])).nil? # XXX
       dst
-    when !(dst = spn(ARGV[0])).nil? # XXX
+    when !(dst = TTT.spn(ARGV[0])).nil? # XXX
       dst
     when $OPT['b']
-      reduce(decode_substring(ARGV[0])) # XXX
+      TTT.reduce(TTT.decode_substring(ARGV[0])) # XXX
     when $OPT['w']
-      ARGV.map { |str| reduce(decode_string(str)) }.join(' ')
+      ARGV.map { |str| TTT.reduce(TTT.decode_string(str)) }.join(' ')
     when $marker.empty?
-      ARGV.map { |str| reduce(decode_substring(str)) }.join(' ')
+      ARGV.map { |str| TTT.reduce(TTT.decode_substring(str)) }.join(' ')
     else
       ARGV.map { |str|
         chunk = str.split($marker, -1)
         last = chunk.pop
-        chunk.map { |s| reduce(decode_substring(s)) }.join + last
+        chunk.map { |s| TTT.reduce(TTT.decode_substring(s)) }.join + last
       }.join(' ')
     end + ($OPT['n'] ? '' : "\n")
   end
@@ -911,20 +913,20 @@ EOF
     $OPT['p'] = false unless $stdin.tty? # XXX
     while ($stderr.print "> " if $OPT['p']; str = gets) do
       print case
-      when !(dst = clear_ihelp(str)).nil?
+      when !(dst = TTT.clear_ihelp(str)).nil?
         dst
-      when !(dst = spn(str)).nil?
+      when !(dst = TTT.spn(str)).nil?
         dst
       when $OPT['b']
-        reduce(decode_substring(str.chomp)) + "\n" # XXX
+        TTT.reduce(TTT.decode_substring(str.chomp)) + "\n" # XXX
       when $OPT['w']
-        reduce(decode_string(str))
+        TTT.reduce(TTT.decode_string(str))
       when $marker.empty?
-        reduce(decode_substring(str))
+        TTT.reduce(TTT.decode_substring(str))
       else
         chunk = str.split($marker, -1);
         last = chunk.pop
-        chunk.map { |s| reduce(decode_substring(s)) }.join + last
+        chunk.map { |s| TTT.reduce(TTT.decode_substring(s)) }.join + last
       end
     end
   end

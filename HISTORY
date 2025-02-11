@@ -2,6 +2,7 @@
 
 == Under Git control
 
+- 2025-02-11 refactor: `module_function`
 - 2025-02-11 feat: inline code help
 - 2025-02-09 fix: fix regexp
 - 2025-02-08 docs: update document
