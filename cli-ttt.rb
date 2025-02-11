@@ -10,7 +10,7 @@
 # --------------------------------------------------------------------
 # version (used by optparse)
 
-Version = '2025-02-09'.tr('-', '.')
+Version = '2025-02-11'.tr('-', '.')
 
 # --------------------------------------------------------------------
 # keys and table
@@ -676,11 +676,16 @@ EOF
 
   @@batch = false
   @@help = Array.new
+  @@ihelp = false
   @@list = false
   @@quiet = false
 
   def set_batch(batch)
     @@batch = batch
+  end
+
+  def set_ihelp(ihelp)
+    @@ihelp = ihelp
   end
 
   def set_list(list)
@@ -781,7 +786,8 @@ EOF
   def reduce(str)
     @@help.clear if !@@quiet
     ret = reduce_sub(str)
-    $stderr.puts(@@help.reverse.join(' ')) if !@@quiet && !@@help.empty?
+    $stderr.puts(@@help.reverse.join(' ')) if !@@quiet && !@@ihelp && !@@help.empty?
+    ret.sub!(/\Z/, "\u{00a4}" + '?' + @@help.reverse.join('?') + '?') if !@@quiet && @@ihelp && !@@help.empty?
     ret
   end
 
@@ -792,12 +798,13 @@ EOF
   # - http://nmksb.seesaa.net/article/486248783.html
 
   # @@spn_pattern = %r!(\u{00a4})/((?:.+?/){2,})(|/| |:|-?\d+)\z!
-  @@spn_pattern = %r!(\u{00a4})/((?:[^\s:]+?/){2,})(|/| |-?\d+)\z!
+  # @@spn_pattern = %r!(\u{00a4})/((?:[^\s:]+?/){2,})(|/| |-?\d+)\z!
+  @@spn_pattern = %r!(\u{00a4})/((?:[^\u{00a4}\s:]+?/){2,})(|/| |-?\d+)\Z!
 
   def spn(str)
     return nil unless @@spn_pattern =~ str
     @@help.clear unless @@quiet
-    pre, mark, ary, cmd = $`, $1, $2.chop.split('/'), $3
+    pre, mark, ary, cmd, post = $`, $1, $2.chop.split('/'), $3, $' # $'
     i = cmd.to_i
     n = ary.length
     ret = pre + case
@@ -818,8 +825,17 @@ EOF
     else
       str
     end
-    $stderr.puts(@@help.reverse.join(' ')) unless @@quiet || @@help.empty?
-    ret
+    $stderr.puts(@@help.reverse.join(' ')) unless @@quiet || @@ihelp || @@help.empty?
+    ret.sub!(/\Z/, "\u{00a4}" + '?' + @@help.reverse.join('?') + '?') if !@@quiet && @@ihelp && !@@help.empty?
+    ret + post
+  end
+
+  @@ihelp_pattern = %r!\u{00a4}\?(?:[^\u{00a4}\s:]+?\?)+\Z!
+
+  def clear_ihelp(str)
+    return nil unless @@ihelp_pattern =~ str
+    pre, ihelp, post = $`, $&, $' # $'
+    pre + post
   end
 end
 
@@ -830,13 +846,14 @@ if __FILE__ == $0
   include TTT
 
   require 'optparse'
-  $OPT = ARGV.getopts('bfhlm:npqvw', 'help', 'version')
+  $OPT = ARGV.getopts('bfhilm:npqvw', 'help', 'version')
 
   $ttt_usage = <<EOF
 Usage: #{File.basename($0)} [OPTIONS] [--] [STR ...]
     -b      Batch mode
     -f      Flush line
     -h      Show usage
+    -i      Inline code help
     -l      List candidates
     -m PAT  Decode at marker PAT
     -n      No newline
@@ -863,12 +880,15 @@ EOF
   $marker = ''
   $marker = unescape($OPT['m']) if $OPT['m']
   set_batch($OPT['b']) if $OPT['b']
+  set_ihelp($OPT['i']) if $OPT['i']
   set_list($OPT['l']) if $OPT['l']
   set_quiet($OPT['q']) if $OPT['q']
 
   def do_ttt_args
     $stdout.sync = true if $OPT['f']
     print case
+    when !(dst = clear_ihelp(ARGV[0])).nil? # XXX
+      dst
     when !(dst = spn(ARGV[0])).nil? # XXX
       dst
     when $OPT['b']
@@ -891,8 +911,10 @@ EOF
     $OPT['p'] = false unless $stdin.tty? # XXX
     while ($stderr.print "> " if $OPT['p']; str = gets) do
       print case
-      when !(dst = spn(str.chomp)).nil?
-        dst + "\n" # XXX
+      when !(dst = clear_ihelp(str)).nil?
+        dst
+      when !(dst = spn(str)).nil?
+        dst
       when $OPT['b']
         reduce(decode_substring(str.chomp)) + "\n" # XXX
       when $OPT['w']

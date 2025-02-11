@@ -10,7 +10,7 @@
 # --------------------------------------------------------------------
 # version
 
-my $Version = '2025-02-09' =~ y/-/./r;
+my $Version = '2025-02-11' =~ y/-/./r;
 
 # --------------------------------------------------------------------
 # utf-8
@@ -693,11 +693,16 @@ EOF
 
     our $batch = '';
     our @help = ();
+    our $ihelp = '';
     our $list = '';
     our $quiet = '';
 
     sub set_batch($) {
         $batch = shift;
+    }
+
+    sub set_ihelp($) {
+        $ihelp = shift;
     }
 
     sub set_list($) {
@@ -802,10 +807,14 @@ EOF
         my $str = shift;
         @help = () unless $quiet;
         my $ret = &reduce_sub($str);
-        unless ($quiet || @help == 0) {
+        unless ($quiet || $ihelp || @help == 0) {
             my $help = join ' ', reverse(@help);
             utf8::encode($help);
             print STDERR $help . "\n";
+        }
+        unless ($quiet || !$ihelp || @help == 0) {
+            my $help = "\N{U+00a4}" . '?' . join('?', reverse(@help)) . '?';
+            $ret =~ s/\Z/$help/;
         }
         $ret;
     }
@@ -817,13 +826,14 @@ EOF
     # - http://nmksb.seesaa.net/article/486248783.html
 
     # our $spn_pattern = qr!(\N{U+00a4})/((?:.+?/){2,})(|/| |:|-?\d+)\z!;
-    our $spn_pattern = qr!(\N{U+00a4})/((?:[^\s:]+?/){2,})(|/| |-?\d+)\z!;
+    # our $spn_pattern = qr!(\N{U+00a4})/((?:[^\s:]+?/){2,})(|/| |-?\d+)\z!;
+    our $spn_pattern = qr!(\N{U+00a4})/((?:[^\N{U+00a4}\s:]+?/){2,})(|/| |-?\d+)\Z!;
 
     sub spn($) {
         my $str = shift;
         return '' unless $str =~ $spn_pattern;
         @help = () unless $quiet;
-        my ($pre, $mark, $cands, $cmd) = ($`, $1, $2, $3);
+        my ($pre, $mark, $cands, $cmd, $post) = ($`, $1, $2, $3, $');
         chop($cands);
         my @ary = split('/', $cands);
         my $i = $cmd =~ m/-?\d+/ ? $cmd + 0 : 0;
@@ -848,12 +858,25 @@ EOF
         } else {
             $ret = $str;
         }
-        unless ($quiet || @help == 0) {
+        unless ($quiet || $ihelp || @help == 0) {
             my $help = join ' ', reverse(@help);
             utf8::encode($help);
             print STDERR $help . "\n";
         }
-        $ret;
+        unless ($quiet || !$ihelp || @help == 0) {
+            my $help = "\N{U+00a4}" . '?' . join('?', reverse(@help)) . '?';
+            $ret =~ s/\Z/$help/;
+        }
+       $ret . $post;
+    }
+
+    our $ihelp_pattern = qr!\N{U+00a4}\?(?:[^\N{U+00a4}\s:]+?\?)+\Z!;
+
+    sub clear_ihelp($) {
+        my $str = shift;
+        return '' unless $str =~ $ihelp_pattern; # XXX: ''
+        my ($pre, $ihelp, $post) = ($`, $&, $');
+        $pre . $post;
     }
 };
 
@@ -861,11 +884,12 @@ EOF
 # main
 
 if (__FILE__ eq $0) {
-    my ($batch, $flush, $help, $list, $marker, $nonewline, $prompt, $quiet, $version, $whole) = ('', '', '', '', '', '', '', '');
+    my ($batch, $flush, $help, $ihelp, $list, $marker, $nonewline, $prompt, $quiet, $version, $whole) = ('', '', '', '', '', '', '', '', '', '', '');
     GetOptions(
         'b' => \$batch,
         'f' => \$flush,
         'help|h' => \$help,
+        'i' => \$ihelp,
         'l' => \$list,
         'm=s' => \$marker,
         'n' => \$nonewline,
@@ -882,6 +906,7 @@ Usage: $basename [OPTIONS] [--] [STR ...]
     -b      Batch mode
     -f      Flush line
     -h      Show usage
+    -i      Inline code help
     -l      List candidates
     -m PAT  Decode at marker PAT
     -n      No newline
@@ -910,6 +935,7 @@ EOF
 
     $marker = &unescape($marker) if $marker;
     &TTT::set_batch($batch) if $batch;
+    &TTT::set_ihelp($ihelp) if $ihelp;
     &TTT::set_list($list) if $list;
     &TTT::set_quiet($quiet) if $quiet;
 
@@ -917,8 +943,10 @@ EOF
         $| = 1 if $flush;
         @ARGV = map { utf8::decode($_); $_ } @ARGV;
         my $dst;
-        if (($dst = &TTT::spn($ARGV[0])) ne '') {
-            $dst = $dst;
+        if (($dst = &TTT::clear_ihelp($ARGV[0])) ne '') { # XXX
+            ; # $dst = $dst;
+        } elsif (($dst = &TTT::spn($ARGV[0])) ne '') { # XXX
+            ; # $dst = $dst;
         } elsif ($batch) {
             $dst = &TTT::reduce(&TTT::decode_substring($ARGV[0])); # XXX
         } elsif ($whole) {
@@ -945,9 +973,11 @@ EOF
         while ($str = <>) {
             utf8::decode($str);
             my $dst;
-            my $str_ = $str; chomp($str_);
-            if (($dst = &TTT::spn($str_)) ne '') {
-                $dst .= "\n";
+            # my $str_ = $str; chomp($str_);
+            if (($dst = &TTT::clear_ihelp($str)) ne '') {
+                ; # $dst = $dst;
+            } elsif (($dst = &TTT::spn($str)) ne '') {
+                ; # $dst .= "\n";
             } elsif ($batch) {
                 chomp($str);
                 $dst = &TTT::reduce(&TTT::decode_substring($str)) . "\n"; # XXX
