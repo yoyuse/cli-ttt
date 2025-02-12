@@ -1,4 +1,5 @@
 function bash-ttt() {
+    local IFS=$' \t\n'
     local CLI_TTT_COMMAND="${CLI_TTT_COMMAND:-cli-ttt -l -q --}"
     local lbuf="${READLINE_LINE:0:$READLINE_POINT}"
     local rbuf="${READLINE_LINE:$READLINE_POINT}"

@@ -2,6 +2,7 @@
 
 == Under Git control
 
+- 2025-02-12 fix: for `while IFS= read -e -r VAR; do ...; done`
 - 2025-02-11 refactor: `module_function`
 - 2025-02-11 feat: inline code help
 - 2025-02-09 fix: fix regexp
