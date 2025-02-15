@@ -691,22 +691,27 @@ EOF
     our $fin = '/dev/tty';
     our $fout = '/dev/tty';
 
-    our $batch = '';
+    # our $batch = '';
     our @help = ();
-    our $ihelp = '';
-    our $list = '';
+    # our $ihelp = '';
+    # our $list = '';
+    our $interactive = '';
     our $quiet = '';
 
-    sub set_batch($) {
-        $batch = shift;
-    }
+    # sub set_batch($) {
+    #     $batch = shift;
+    # }
 
-    sub set_ihelp($) {
-        $ihelp = shift;
-    }
+    # sub set_ihelp($) {
+    #     $ihelp = shift;
+    # }
 
-    sub set_list($) {
-        $list = shift;
+    # sub set_list($) {
+    #     $list = shift;
+    # }
+
+    sub set_interactive($) {
+        $interactive = shift;
     }
 
     sub set_quiet($) {
@@ -726,7 +731,7 @@ EOF
         my $f;
         open($f, ">", $fout);
         print $f $prompt . "\n";
-        print $f join("\n", map { $i++ . "\t" . $_ } @cands) . "\n";
+        print $f join("\n", map { $i++ . ' ' . $_ } @cands) . "\n";
         print $f '>> ';
         close($f);
         open($f, "<", $fin);
@@ -773,7 +778,7 @@ EOF
             return &invalidate_all($str) if @cands < 1;
             my $c = $cands[0];
             push @help, &code_help_str($c, $a . $b) unless $quiet;
-            return ($str1 =~ s/%/%%/gr) . '%s' . ((substr $str3 . $str4 . $str5, 2) =~ s/%/%%/gr) . "\n" . $c . ' ' . &code_help_str($c, $a . $b) if $batch;
+            # return ($str1 =~ s/%/%%/gr) . '%s' . ((substr $str3 . $str4 . $str5, 2) =~ s/%/%%/gr) . "\n" . $c . ' ' . &code_help_str($c, $a . $b) if $batch;
             &reduce_sub($str1 . $c . (substr $str3 . $str4 . $str5, 2));
         } elsif ($str2 eq "\N{U+00a4}◇") {
             return &invalidate_all($str) if @ls < 1;
@@ -788,13 +793,14 @@ EOF
             } elsif (@cands == 1) {
                 $c = $cands[0];
             } else {
-                return &reduce_sub($str1 . "\N{U+00a4}" . '/' . join('/', @cands) . '/' . $str5) if $list;
-                return ($str1 =~ s/%/%%/gr) . '%s' . ($str5 =~ s/%/%%/gr) . "\n" . join "\n", (map { $_ . ' ' . &code_help_str($_, $s) } @cands) if $batch;
+                # return &reduce_sub($str1 . "\N{U+00a4}" . '/' . join('/', @cands) . '/' . $str5) if $list;
+                return &reduce_sub($str1 . "\N{U+00a4}" . '/' . join('/', @cands) . '/' . $str5) unless $interactive;
+                # return ($str1 =~ s/%/%%/gr) . '%s' . ($str5 =~ s/%/%%/gr) . "\n" . join "\n", (map { $_ . ' ' . &code_help_str($_, $s) } @cands) if $batch;
                 $c = &selecting_read($str1 . "[$str3]" . $str5, @cands);
                 return &invalidate_all($str) unless $c;
             }
             push @help, &code_help_str($c, $s) unless $quiet;
-            return ($str1 =~ s/%/%%/gr) . '%s' . ($str5 =~ s/%/%%/gr) . "\n" . $c . ' ' . &code_help_str($c, $s) if $batch;
+            # return ($str1 =~ s/%/%%/gr) . '%s' . ($str5 =~ s/%/%%/gr) . "\n" . $c . ' ' . &code_help_str($c, $s) if $batch;
             &reduce_sub($str1 . $c . $str5);
         } else {
             return &invalidate_all($str);
@@ -805,12 +811,15 @@ EOF
         my $str = shift;
         @help = () unless $quiet;
         my $ret = &reduce_sub($str);
-        unless ($quiet || $ihelp || @help == 0) {
+        # unless ($quiet || $ihelp || @help == 0) {
+        unless ($quiet || !$interactive || @help == 0) {
+
             my $help = join ' ', reverse(@help);
             utf8::encode($help);
             print STDERR $help . "\n";
         }
-        unless ($quiet || !$ihelp || @help == 0) {
+        # unless ($quiet || !$ihelp || @help == 0) {
+        unless ($quiet || $interactive || @help == 0) {
             my $help = "\N{U+00a4}" . '?' . join('?', reverse(@help)) . '?';
             $ret =~ s/\Z/$help/;
         }
@@ -854,12 +863,14 @@ EOF
         } else {
             $ret = $str;
         }
-        unless ($quiet || $ihelp || @help == 0) {
+        # unless ($quiet || $ihelp || @help == 0) {
+        unless ($quiet || !$interactive || @help == 0) {
             my $help = join ' ', reverse(@help);
             utf8::encode($help);
             print STDERR $help . "\n";
         }
-        unless ($quiet || !$ihelp || @help == 0) {
+        # unless ($quiet || !$ihelp || @help == 0) {
+        unless ($quiet || $interactive || @help == 0) {
             my $help = "\N{U+00a4}" . '?' . join('?', reverse(@help)) . '?';
             $ret =~ s/\Z/$help/;
         }
@@ -880,16 +891,13 @@ EOF
 # main
 
 if (__FILE__ eq $0) {
-    my ($batch, $flush, $help, $ihelp, $list, $marker, $nonewline, $prompt, $quiet, $version, $whole) = ('', '', '', '', '', '', '', '', '', '', '');
+    # my ($batch, $flush, $help, $ihelp, $list, $marker, $nonewline, $prompt, $quiet, $version, $whole) = ('', '', '', '', '', '', '', '', '', '', '');
+    my ($help, $interactive, $marker, $nonewline, $quiet, $version, $whole) = ('', '', '', '', '', '', '');
     GetOptions(
-        'b' => \$batch,
-        'f' => \$flush,
         'help|h' => \$help,
-        'i' => \$ihelp,
-        'l' => \$list,
+        'i' => \$interactive,
         'm=s' => \$marker,
         'n' => \$nonewline,
-        'p' => \$prompt,
         'q' => \$quiet,
         'version|v' => \$version,
         'w' => \$whole
@@ -899,14 +907,10 @@ if (__FILE__ eq $0) {
 
     my $ttt_usage = <<EOF;
 Usage: $basename [OPTIONS] [--] [STR ...]
-    -b      Batch mode
-    -f      Flush line
     -h      Show usage
-    -i      Inline code help
-    -l      List candidates
+    -i      Interactive
     -m PAT  Decode at marker PAT
     -n      No newline
-    -p      Prompt
     -q      No code help
     -v      Show version
     -w      Decode whole STR
@@ -930,21 +934,23 @@ EOF
     }
 
     $marker = &unescape($marker) if $marker;
-    &TTT::set_batch($batch) if $batch;
-    &TTT::set_ihelp($ihelp) if $ihelp;
-    &TTT::set_list($list) if $list;
+    # &TTT::set_batch($batch) if $batch;
+    # &TTT::set_ihelp($ihelp) if $ihelp;
+    # &TTT::set_list($list) if $list;
+    &TTT::set_interactive($interactive) if $interactive;
     &TTT::set_quiet($quiet) if $quiet;
 
     sub do_ttt_args {
-        $| = 1 if $flush;
+        # $| = 1 if $flush;
+        $| = 1;
         @ARGV = map { utf8::decode($_); $_ } @ARGV;
         my $dst;
         if (($dst = &TTT::clear_ihelp($ARGV[0])) ne '') { # XXX
             ;
         } elsif (($dst = &TTT::spn($ARGV[0])) ne '') { # XXX
             ;
-        } elsif ($batch) {
-            $dst = &TTT::reduce(&TTT::decode_substring($ARGV[0])); # XXX
+        # } elsif ($batch) {
+        #     $dst = &TTT::reduce(&TTT::decode_substring($ARGV[0])); # XXX
         } elsif ($whole) {
             $dst = join ' ', map { &TTT::reduce(&TTT::decode_string($_)) } @ARGV;
         } elsif ($marker eq '') {
@@ -962,10 +968,11 @@ EOF
     }
 
     sub do_ttt_stdin {
-        $| = 1 if $flush;
-        $prompt = '' unless -t STDIN; # XXX
+        # $| = 1 if $flush;
+        $| = 1;
+        # $prompt = '' unless -t STDIN; # XXX
         my $str;
-        print STDERR "> " if $prompt;
+        # print STDERR "> " if $prompt;
         while ($str = <>) {
             utf8::decode($str);
             my $dst;
@@ -973,9 +980,9 @@ EOF
                 ;
             } elsif (($dst = &TTT::spn($str)) ne '') {
                 ;
-            } elsif ($batch) {
-                chomp($str);
-                $dst = &TTT::reduce(&TTT::decode_substring($str)) . "\n"; # XXX
+            # } elsif ($batch) {
+            #     chomp($str);
+            #     $dst = &TTT::reduce(&TTT::decode_substring($str)) . "\n"; # XXX
             } elsif ($whole) {
                 $dst = &TTT::reduce(&TTT::decode_string($str));
             } elsif ($marker eq '') {
@@ -988,7 +995,7 @@ EOF
             }
             utf8::encode($dst);
             print $dst;
-            print STDERR "> " if $prompt;
+            # print STDERR "> " if $prompt;
         }
     }
 

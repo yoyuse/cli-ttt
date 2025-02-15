@@ -676,22 +676,27 @@ EOF
   @@fin = '/dev/tty'
   @@fout = '/dev/tty'
 
-  @@batch = false
+  # @@batch = false
   @@help = Array.new
-  @@ihelp = false
-  @@list = false
+  # @@ihelp = false
+  # @@list = false
+  @@interactive = false
   @@quiet = false
 
-  def set_batch(batch)
-    @@batch = batch
-  end
+  # def set_batch(batch)
+  #   @@batch = batch
+  # end
 
-  def set_ihelp(ihelp)
-    @@ihelp = ihelp
-  end
+  # def set_ihelp(ihelp)
+  #   @@ihelp = ihelp
+  # end
 
-  def set_list(list)
-    @@list = list
+  # def set_list(list)
+  #   @@list = list
+  # end
+
+  def set_interactive(interactive)
+    @@interactive = interactive
   end
 
   def set_quiet(quiet)
@@ -707,7 +712,7 @@ EOF
     offset = 1
     open(@@fout, "w") do |f|
       f.puts(prompt)
-      f.puts(cands.map.with_index(offset) { |c, i| "#{i}\t#{c}" }.join("\n"))
+      f.puts(cands.map.with_index(offset) { |c, i| i.to_s + ' ' + c }.join("\n"))
       f.print('>> ')
     end
     open(@@fin, "r") do |f|
@@ -755,7 +760,7 @@ EOF
       return invalidate_all(str) if cands.length < 1
       c = cands[0]
       @@help.push(code_help_str(c, a + b)) if !@@quiet
-      return str1.gsub('%', '%%') + '%s' + (str3 + str4 + str5)[2..-1].gsub('%', '%%') + "\n" + c + ' ' + code_help_str(c, a + b) if @@batch
+      # return str1.gsub('%', '%%') + '%s' + (str3 + str4 + str5)[2..-1].gsub('%', '%%') + "\n" + c + ' ' + code_help_str(c, a + b) if @@batch
       reduce_sub(str1 + c + (str3 + str4 + str5)[2..-1])
     when "\u{00a4}◇"
       return invalidate_all(str) if ls.length < 1
@@ -770,13 +775,14 @@ EOF
       when 1
         c = cands[0]
       else
-        return reduce_sub(str1 + "\u{00a4}" + '/' + cands.join('/') + '/' + str5) if @@list
-        return str1.gsub('%', '%%') + '%s' + str5.gsub('%', '%%') + "\n" + cands.map{ |c| c + ' ' + code_help_str(c, s) }.join("\n") if @@batch
+        # return reduce_sub(str1 + "\u{00a4}" + '/' + cands.join('/') + '/' + str5) if @@list
+        return reduce_sub(str1 + "\u{00a4}" + '/' + cands.join('/') + '/' + str5) unless @@interactive
+        # return str1.gsub('%', '%%') + '%s' + str5.gsub('%', '%%') + "\n" + cands.map{ |c| c + ' ' + code_help_str(c, s) }.join("\n") if @@batch
         c = selecting_read(str1 + '[' + str3 + ']' + str5, cands)
         return invalidate_all(str) if c.nil? || c.empty?
       end
       @@help.push(code_help_str(c, s)) if !@@quiet
-      return str1.gsub('%', '%%') + '%s' + str5.gsub('%', '%%') + "\n" + c + ' ' + code_help_str(c, s) if @@batch
+      # return str1.gsub('%', '%%') + '%s' + str5.gsub('%', '%%') + "\n" + c + ' ' + code_help_str(c, s) if @@batch
       reduce_sub(str1 + c + str5)
     else
       return invalidate_all(str)
@@ -786,8 +792,10 @@ EOF
   def reduce(str)
     @@help.clear if !@@quiet
     ret = reduce_sub(str)
-    $stderr.puts(@@help.reverse.join(' ')) if !@@quiet && !@@ihelp && !@@help.empty?
-    ret.sub!(/\Z/, "\u{00a4}" + '?' + @@help.reverse.join('?') + '?') if !@@quiet && @@ihelp && !@@help.empty?
+    # $stderr.puts(@@help.reverse.join(' ')) if !@@quiet && !@@ihelp && !@@help.empty?
+    # ret.sub!(/\Z/, "\u{00a4}" + '?' + @@help.reverse.join('?') + '?') if !@@quiet && @@ihelp && !@@help.empty?
+    $stderr.puts(@@help.reverse.join(' ')) if !@@quiet && @@interactive && !@@help.empty?
+    ret.sub!(/\Z/, "\u{00a4}" + '?' + @@help.reverse.join('?') + '?') if !@@quiet && !@@interactive && !@@help.empty?
     ret
   end
 
@@ -823,8 +831,10 @@ EOF
     else
       str
     end
-    $stderr.puts(@@help.reverse.join(' ')) unless @@quiet || @@ihelp || @@help.empty?
-    ret.sub!(/\Z/, "\u{00a4}" + '?' + @@help.reverse.join('?') + '?') if !@@quiet && @@ihelp && !@@help.empty?
+    # $stderr.puts(@@help.reverse.join(' ')) unless @@quiet || @@ihelp || @@help.empty?
+    # ret.sub!(/\Z/, "\u{00a4}" + '?' + @@help.reverse.join('?') + '?') if !@@quiet && @@ihelp && !@@help.empty?
+    $stderr.puts(@@help.reverse.join(' ')) if !@@quiet && @@interactive && !@@help.empty?
+    ret.sub!(/\Z/, "\u{00a4}" + '?' + @@help.reverse.join('?') + '?') if !@@quiet && !@@interactive && !@@help.empty?
     ret + post
   end
 
@@ -842,18 +852,15 @@ end
 
 if __FILE__ == $0
   require 'optparse'
-  $OPT = ARGV.getopts('bfhilm:npqvw', 'help', 'version')
+  # $OPT = ARGV.getopts('bfhilm:npqvw', 'help', 'version')
+  $OPT = ARGV.getopts('him:nqvw', 'help', 'version')
 
   $ttt_usage = <<EOF
 Usage: #{File.basename($0)} [OPTIONS] [--] [STR ...]
-    -b      Batch mode
-    -f      Flush line
     -h      Show usage
-    -i      Inline code help
-    -l      List candidates
+    -i      Interactive
     -m PAT  Decode at marker PAT
     -n      No newline
-    -p      Prompt
     -q      No code help
     -v      Show version
     -w      Decode whole STR
@@ -875,20 +882,21 @@ EOF
 
   $marker = ''
   $marker = unescape($OPT['m']) if $OPT['m']
-  TTT.set_batch($OPT['b']) if $OPT['b']
-  TTT.set_ihelp($OPT['i']) if $OPT['i']
-  TTT.set_list($OPT['l']) if $OPT['l']
+  # TTT.set_batch($OPT['b']) if $OPT['b']
+  # TTT.set_ihelp($OPT['i']) if $OPT['i']
+  # TTT.set_list($OPT['l']) if $OPT['l']
+  TTT.set_interactive($OPT['i']) if $OPT['i']
   TTT.set_quiet($OPT['q']) if $OPT['q']
 
   def do_ttt_args
-    $stdout.sync = true if $OPT['f']
+    $stdout.sync = true # if $OPT['f']
     print case
     when !(dst = TTT.clear_ihelp(ARGV[0])).nil? # XXX
       dst
     when !(dst = TTT.spn(ARGV[0])).nil? # XXX
       dst
-    when $OPT['b']
-      TTT.reduce(TTT.decode_substring(ARGV[0])) # XXX
+    # when $OPT['b']
+    #   TTT.reduce(TTT.decode_substring(ARGV[0])) # XXX
     when $OPT['w']
       ARGV.map { |str| TTT.reduce(TTT.decode_string(str)) }.join(' ')
     when $marker.empty?
@@ -903,16 +911,17 @@ EOF
   end
 
   def do_ttt_stdin
-    $stdout.sync = true if $OPT['f']
-    $OPT['p'] = false unless $stdin.tty? # XXX
-    while ($stderr.print "> " if $OPT['p']; str = gets) do
+    $stdout.sync = true # if $OPT['f']
+    # $OPT['p'] = false unless $stdin.tty? # XXX
+    # while ($stderr.print "> " if $OPT['p']; str = gets) do
+    while str = gets do
       print case
       when !(dst = TTT.clear_ihelp(str)).nil?
         dst
       when !(dst = TTT.spn(str)).nil?
         dst
-      when $OPT['b']
-        TTT.reduce(TTT.decode_substring(str.chomp)) + "\n" # XXX
+      # when $OPT['b']
+      #   TTT.reduce(TTT.decode_substring(str.chomp)) + "\n" # XXX
       when $OPT['w']
         TTT.reduce(TTT.decode_string(str))
       when $marker.empty?

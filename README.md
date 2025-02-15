@@ -67,15 +67,11 @@ $ cli-ttt -m % 'yd.djtjshdjfoxhgw7ig;eks% Morio:/vjd%'
 
 | オプション | 意味 |
 |--------|---------|
-| `-b` | 補助変換の変換候補をすべて出力する (batch 処理用) |
-| `-f` | 出力をバッファリングせず 1 行ごとに flush する |
 | `-h` | 使用法を表示して終了する |
-| `-i` | 補助変換のコードヘルプをインライン表示する |
-| `-l` | 補助変換の変換候補をすべて出力する (list 表示) |
+| `-i` | 対話的に候補を選択する |
 | `-m` *MARKER* | *MARKER* の各位置で変換を行う |
 | `-n` | 改行文字を出力しない (`echo` モードのとき) |
-| `-p` | プロンプトを表示する (`cat` モードで tty から入力するとき) |
-| `-q` | 補助変換のコードヘルプを表示しない |
+| `-q` | コードヘルプを表示しない |
 | `-v` | バージョンを表示して終了する |
 | `-w` | 文字列全体を変換する |
 
@@ -110,7 +106,8 @@ $ cli-ttt -m % 'yd.djtjshdjfoxhgw7ig;eks% Morio:/vjd%'
 
 - 例: `jfjf` `pw` `ha` → `森`
 
-補助変換で入力した文字は `森<jfox>` のように、標準エラー出力にコードヘルプが表示されます (`-q` オプションを指定しない場合)。
+`-i` オプションを指定した場合は `森<jfox>` のように、標準エラー出力にコードヘルプが表示されます。
+ヘルプの表示を抑制するには `-q` オプションを指定します。
 
 合成できない場合は `jfjf` は `◆` となって残ります。
 
@@ -128,15 +125,13 @@ $ cli-ttt -m % 'yd.djtjshdjfoxhgw7ig;eks% Morio:/vjd%'
 例:
 
 ``` shellsession
-$ cli-ttt -p
-> fjfjjendz/
+$ echo 'fjfjjendz/' | cli-ttt -i
 [かん字]
-1       換字
-2       漢字
+1 換字
+2 漢字
 >> 2
 漢<l4>字
 漢字
->
 ```
 
 変換は単語変換です。
@@ -146,19 +141,17 @@ $ cli-ttt -p
 例:
 
 ``` shellsession
-$ cli-ttt -p
-> fjfjkd.uhdks
+$ echo 'fjfjkd.uhdks' | cli-ttt -i
 ◇のぞいた
-> fjfjkd.u
+$ echo 'fjfjkd.u' | cli-ttt -i
 [のぞ]
-1       除
-2       覗
-3       望
-4       臨
+1 除
+2 覗
+3 望
+4 臨
 >> 1
 除<;5>
 除
->
 ```
 
 異体字変換を含んでいます。
@@ -195,15 +188,13 @@ $ cli-ttt -p
 例:
 
 ``` shellsession
-$ cli-ttt -p
-> fjfj,fhrhxkcjrksfjfjje;3lfjd
+$ echo 'fjfj,fhrhxkcjrksfjfjje;3lfjd' | cli-ttt -i
 ¤◇すき通—った[かぜ]、
 1       風
 2       風邪
 >> 1
 透<jfu;>き通 風<qr>
 透き通った風、
->
 ```
 
 ## 利用例 (コマンドライン編集)
@@ -214,10 +205,9 @@ $ cli-ttt -p
 
 ``` bash
 function bash-ttt() {
-    local CLI_TTT_COMMAND="${CLI_TTT_COMMAND:-cli-ttt -l -q --}"
     local lbuf="${READLINE_LINE:0:$READLINE_POINT}"
     local rbuf="${READLINE_LINE:$READLINE_POINT}"
-    local buf="$($CLI_TTT_COMMAND "$lbuf")"
+    local buf="$(cli-ttt -q -- "$lbuf")"
     READLINE_LINE="$buf$rbuf"
     READLINE_POINT=${#buf}
 }
@@ -232,9 +222,8 @@ fi
 
 ``` zsh
 function zsh-ttt() {
-    local CLI_TTT_COMMAND="${CLI_TTT_COMMAND:-cli-ttt -l -q --}"
     local rbuf="$RBUFFER"
-    BUFFER=$(${=CLI_TTT_COMMAND} "$LBUFFER")
+    BUFFER=$(cli-ttt -q -- "$LBUFFER")
     CURSOR=$#BUFFER
     BUFFER="$BUFFER$rbuf"
     zle && zle reset-prompt
@@ -247,23 +236,21 @@ bindkey '\ej' zsh-ttt
 ### Fish
 
 ``` fish
-function __fish_ttt_do_ttt
-    set -q FISH_TTT_COMMAND
-    or set -l FISH_TTT_COMMAND cli-ttt -l -q --
-    set -l rbuffer (string sub -s (math (commandline -C) + 1) -- (commandline))
-    set -l lbuffer ($FISH_TTT_COMMAND (commandline -c))
-    set -l cursor (string length -- "$lbuffer")
-    commandline -- "$lbuffer$rbuffer"
+function fish-ttt
+    set -l rbuf (string sub -s (math (commandline -C) + 1) -- (commandline))
+    set -l lbuf (cli-ttt -q -- (commandline -c))
+    set -l cursor (string length -- "$lbuf")
+    commandline -- "$lbuf$rbuf"
     commandline -C $cursor
     commandline -f repaint
 end
 
-bind \ej '__fish_ttt_do_ttt'
+bind \ej fish-ttt
 ```
 
 ### 候補選択
 
-`-l` オプション指定時は、変換候補が複数の場合、変換結果は `/` で区切られた候補リストになります。
+変換候補が複数の場合、変換結果は `/` で区切られた候補リストになります。
 候補リストに続けてさらに入力することで、選択や確定などが行えます。
 
 例:
@@ -321,6 +308,11 @@ $ echo 絲
 $ echo hdja<space><a-j>
 $ echo ¤/伊都/意図/厭/糸/
 ```
+
+### コードヘルプ
+
+`-q` オプションを指定しない場合は `漢字¤?漢<l4>字<z/>?` のように、コードヘルプが表示されます。
+コードヘルプはさらに `<a-j>` を入力すると消去できます。
 
 ## ライセンス
 
