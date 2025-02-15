@@ -10,7 +10,7 @@
 # --------------------------------------------------------------------
 # version (used by optparse)
 
-Version = '2025-02-11'.tr('-', '.')
+Version = '2025-02-15'.tr('-', '.')
 
 # --------------------------------------------------------------------
 # keys and table
@@ -426,7 +426,7 @@ EOF
   # code help
 
   def make_code_help(code)
-    '<' + (code ? code : '--') + '>' # XXX: '--'
+    '<' + code + '>'
   end
 
   def code_help_ch(ch, certain = '')
@@ -744,10 +744,8 @@ EOF
       n = @@decode_length
       return pre + s[0 .. -n - 1] + postfix_conversion(s[-n .. -1]) + nl
     end
-    # return invalidate_all(str) unless /(.*)(\u{00a4}[◆◇])(.*?)([—・ ]|\z)(.*\n?)\z/ =~ str # XXX: \n?
-    # str1, str2, str3, str4, str5  = $` + $1, $2, $3, $4, $5
     return invalidate_all(str) unless /(.*)(\u{00a4}[◆◇])(.*?)(—|・|\Z)(.*)/ =~ str
-    str1, str2, str3, str4, str5  = $` + $1, $2, $3, $4, $5 + $' # $' == "", "\n", "\r", "\r\n", …
+    str1, str2, str3, str4, str5  = $` + $1, $2, $3, $4, $5 + $'
     ls = (str3 + str4 + str5).split(//)
     case str2
     when "\u{00a4}◆"
@@ -799,14 +797,12 @@ EOF
   # - 自作ゲームで日本語入力できない?なら自作すれば?: 濃密金石文
   # - http://nmksb.seesaa.net/article/486248783.html
 
-  # @@spn_pattern = %r!(\u{00a4})/((?:.+?/){2,})(|/| |:|-?\d+)\z!
-  # @@spn_pattern = %r!(\u{00a4})/((?:[^\s:]+?/){2,})(|/| |-?\d+)\z!
   @@spn_pattern = %r!(\u{00a4})/((?:[^\u{00a4}\s:]+?/){2,})(|/| |-?\d+)\Z!
 
   def spn(str)
     return nil unless @@spn_pattern =~ str
     @@help.clear unless @@quiet
-    pre, mark, ary, cmd, post = $`, $1, $2.chop.split('/'), $3, $' # $'
+    pre, mark, ary, cmd, post = $`, $1, $2.chop.split('/'), $3, $'
     i = cmd.to_i
     n = ary.length
     ret = pre + case
@@ -836,7 +832,7 @@ EOF
 
   def clear_ihelp(str)
     return nil unless @@ihelp_pattern =~ str
-    pre, ihelp, post = $`, $&, $' # $'
+    pre, ihelp, post = $`, $&, $'
     pre + post
   end
 end
@@ -845,8 +841,6 @@ end
 # main
 
 if __FILE__ == $0
-  # include TTT
-
   require 'optparse'
   $OPT = ARGV.getopts('bfhilm:npqvw', 'help', 'version')
 

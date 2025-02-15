@@ -10,7 +10,7 @@
 # --------------------------------------------------------------------
 # version
 
-my $Version = '2025-02-11' =~ y/-/./r;
+my $Version = '2025-02-15' =~ y/-/./r;
 
 # --------------------------------------------------------------------
 # utf-8
@@ -431,7 +431,7 @@ EOF
 
     sub make_code_help($) {
         my $code = shift;
-        '<' . ($code ne '' ? $code : '--') . '>'; # XXX: '--'
+        '<' . $code . '>';
     }
 
     sub code_help_ch($;$) {
@@ -763,8 +763,6 @@ EOF
             my $n = $decode_length;
             return $pre . substr($s, 0, length($s) - $n) . &postfix_conversion(substr($s, -$n)) . $nl;
         }
-        # return &invalidate_all($str) unless $str =~ m/(.*)(\N{U+00a4}[◆◇])(.*?)([—・ ]|\z)(.*\n?)\z/; # XXX: \n?
-        # my ($str1, $str2, $str3, $str4, $str5) = ($` . $1, $2, $3, $4, $5);
         return &invalidate_all($str) unless $str =~ m/(.*)(\N{U+00a4}[◆◇])(.*?)(—|・|\Z)(.*)/;
         my ($str1, $str2, $str3, $str4, $str5) = ($` . $1, $2, $3, $4, $5 . $');
         my @ls = split '', ($str3 . $str4 . $str5);
@@ -825,8 +823,6 @@ EOF
     # - 自作ゲームで日本語入力できない?なら自作すれば?: 濃密金石文
     # - http://nmksb.seesaa.net/article/486248783.html
 
-    # our $spn_pattern = qr!(\N{U+00a4})/((?:.+?/){2,})(|/| |:|-?\d+)\z!;
-    # our $spn_pattern = qr!(\N{U+00a4})/((?:[^\s:]+?/){2,})(|/| |-?\d+)\z!;
     our $spn_pattern = qr!(\N{U+00a4})/((?:[^\N{U+00a4}\s:]+?/){2,})(|/| |-?\d+)\Z!;
 
     sub spn($) {
@@ -944,9 +940,9 @@ EOF
         @ARGV = map { utf8::decode($_); $_ } @ARGV;
         my $dst;
         if (($dst = &TTT::clear_ihelp($ARGV[0])) ne '') { # XXX
-            ; # $dst = $dst;
+            ;
         } elsif (($dst = &TTT::spn($ARGV[0])) ne '') { # XXX
-            ; # $dst = $dst;
+            ;
         } elsif ($batch) {
             $dst = &TTT::reduce(&TTT::decode_substring($ARGV[0])); # XXX
         } elsif ($whole) {
@@ -973,11 +969,10 @@ EOF
         while ($str = <>) {
             utf8::decode($str);
             my $dst;
-            # my $str_ = $str; chomp($str_);
             if (($dst = &TTT::clear_ihelp($str)) ne '') {
-                ; # $dst = $dst;
+                ;
             } elsif (($dst = &TTT::spn($str)) ne '') {
-                ; # $dst .= "\n";
+                ;
             } elsif ($batch) {
                 chomp($str);
                 $dst = &TTT::reduce(&TTT::decode_substring($str)) . "\n"; # XXX
