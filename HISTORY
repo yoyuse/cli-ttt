@@ -2,6 +2,7 @@
 
 == Under Git control
 
+- 2025-02-19 yomi field before candidate list
 - 2025-02-15 `-i` for interactive; no `-b`, `-f`, `-l`, `-p`
 - 2025-02-15 remove unnecessary comment
 - 2025-02-12 fix: for `while IFS= read -e -r VAR; do ...; done`

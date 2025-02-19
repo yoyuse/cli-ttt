@@ -10,7 +10,7 @@
 # --------------------------------------------------------------------
 # version
 
-my $Version = '2025-02-15' =~ y/-/./r;
+my $Version = '2025-02-19' =~ y/-/./r;
 
 # --------------------------------------------------------------------
 # utf-8
@@ -757,7 +757,8 @@ EOF
             push @help, &code_help_str($cands[0], $str) unless $quiet;
             $cands[0];
         } else {
-            "\N{U+00a4}" . '/' . join('/', @cands) . '/'
+            # "\N{U+00a4}" . '/' . join('/', @cands) . '/'
+            "\N{U+00a4}" . '[' . $str . ']' . '/' . join('/', @cands) . '/'
         }
     }
 
@@ -794,7 +795,8 @@ EOF
                 $c = $cands[0];
             } else {
                 # return &reduce_sub($str1 . "\N{U+00a4}" . '/' . join('/', @cands) . '/' . $str5) if $list;
-                return &reduce_sub($str1 . "\N{U+00a4}" . '/' . join('/', @cands) . '/' . $str5) unless $interactive;
+                # return &reduce_sub($str1 . "\N{U+00a4}" . '/' . join('/', @cands) . '/' . $str5) unless $interactive;
+                return &reduce_sub($str1 . "\N{U+00a4}" . '[' . $s . ']' . '/' . join('/', @cands) . '/' . $str5) unless $interactive;
                 # return ($str1 =~ s/%/%%/gr) . '%s' . ($str5 =~ s/%/%%/gr) . "\n" . join "\n", (map { $_ . ' ' . &code_help_str($_, $s) } @cands) if $batch;
                 $c = &selecting_read($str1 . "[$str3]" . $str5, @cands);
                 return &invalidate_all($str) unless $c;
@@ -832,33 +834,41 @@ EOF
     # - 自作ゲームで日本語入力できない?なら自作すれば?: 濃密金石文
     # - http://nmksb.seesaa.net/article/486248783.html
 
-    our $spn_pattern = qr!(\N{U+00a4})/((?:[^\N{U+00a4}\s:]+?/){2,})(|/| |-?\d+)\Z!;
+    # our $spn_pattern = qr!(\N{U+00a4})/((?:[^\N{U+00a4}\s:]+?/){2,})(|/| |-?\d+)\Z!;
+    our $spn_pattern = qr!(\N{U+00a4})\[([^\N{U+00a4}\s:]+?)\]/((?:[^\N{U+00a4}\s:]+?/){2,})(|/| |-?\d+)\Z!;
 
     sub spn($) {
         my $str = shift;
         return '' unless $str =~ $spn_pattern;
         @help = () unless $quiet;
-        my ($pre, $mark, $cands, $cmd, $post) = ($`, $1, $2, $3, $');
+        # my ($pre, $mark, $cands, $cmd, $post) = ($`, $1, $2, $3, $');
+        my ($pre, $mark, $yomi, $cands, $cmd, $post) = ($`, $1, $2, $3, $4, $');
         chop($cands);
         my @ary = split('/', $cands);
+        my $mark_yomi = $mark . '[' . $yomi . ']';
         my $i = $cmd =~ m/-?\d+/ ? $cmd + 0 : 0;
         my $n = @ary;
         my $ret;
         if ($cmd eq '') {
             my $cand = shift(@ary); push(@ary, $cand);
-            $ret = $pre . $mark . '/' . join('/', @ary) . '/';
+            # $ret = $pre . $mark . '/' . join('/', @ary) . '/';
+            $ret = $pre . $mark_yomi . '/' . join('/', @ary) . '/';
         } elsif ($cmd eq '/') {
             my $cand = pop(@ary); unshift(@ary, $cand);
-            $ret = $pre . $mark . '/' . join('/', @ary) . '/';
+            # $ret = $pre . $mark . '/' . join('/', @ary) . '/';
+            $ret = $pre . $mark_yomi . '/' . join('/', @ary) . '/';
         } elsif ($cmd eq ' ') {
-            push @help, &code_help_str($ary[0]) unless $quiet;
+            # push @help, &code_help_str($ary[0]) unless $quiet;
+            push @help, &code_help_str($ary[0], $yomi) unless $quiet;
             $ret = $pre . $ary[0];
         } elsif (-$n <= $i && $i <= -1) {
             # 負数は右から数える. i == -1 と i == 0 は同じ意味
-            push @help, &code_help_str($ary[$i]) unless $quiet;
+            # push @help, &code_help_str($ary[$i]) unless $quiet;
+            push @help, &code_help_str($ary[$i], $yomi) unless $quiet;
             $ret = $pre . $ary[$i];
         } elsif (0 <= $i && $i <= $n) {
-            push @help, &code_help_str($ary[$i - 1]) unless $quiet;
+            # push @help, &code_help_str($ary[$i - 1]) unless $quiet;
+            push @help, &code_help_str($ary[$i - 1], $yomi) unless $quiet;
             $ret = $pre . $ary[$i - 1];
         } else {
             $ret = $str;

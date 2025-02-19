@@ -10,7 +10,7 @@
 # --------------------------------------------------------------------
 # version (used by optparse)
 
-Version = '2025-02-15'.tr('-', '.')
+Version = '2025-02-19'.tr('-', '.')
 
 # --------------------------------------------------------------------
 # keys and table
@@ -739,7 +739,8 @@ EOF
       @@help.push(code_help_str(cands[0], str)) unless @@quiet
       cands[0]
     else
-      "\u{00a4}" + '/' + cands.join('/') + '/'
+      # "\u{00a4}" + '/' + cands.join('/') + '/'
+      "\u{00a4}" + '[' + str + ']' + '/' + cands.join('/') + '/'
      end
   end
 
@@ -776,7 +777,8 @@ EOF
         c = cands[0]
       else
         # return reduce_sub(str1 + "\u{00a4}" + '/' + cands.join('/') + '/' + str5) if @@list
-        return reduce_sub(str1 + "\u{00a4}" + '/' + cands.join('/') + '/' + str5) unless @@interactive
+        # return reduce_sub(str1 + "\u{00a4}" + '/' + cands.join('/') + '/' + str5) unless @@interactive
+        return reduce_sub(str1 + "\u{00a4}" + '[' + s + ']' + '/' + cands.join('/') + '/' + str5) unless @@interactive
         # return str1.gsub('%', '%%') + '%s' + str5.gsub('%', '%%') + "\n" + cands.map{ |c| c + ' ' + code_help_str(c, s) }.join("\n") if @@batch
         c = selecting_read(str1 + '[' + str3 + ']' + str5, cands)
         return invalidate_all(str) if c.nil? || c.empty?
@@ -805,28 +807,36 @@ EOF
   # - 自作ゲームで日本語入力できない?なら自作すれば?: 濃密金石文
   # - http://nmksb.seesaa.net/article/486248783.html
 
-  @@spn_pattern = %r!(\u{00a4})/((?:[^\u{00a4}\s:]+?/){2,})(|/| |-?\d+)\Z!
+  # @@spn_pattern = %r!(\u{00a4})/((?:[^\u{00a4}\s:]+?/){2,})(|/| |-?\d+)\Z!
+  @@spn_pattern = %r!(\u{00a4})\[([^\u{00a4}\s:]+?)\]/((?:[^\u{00a4}\s:]+?/){2,})(|/| |-?\d+)\Z!
 
   def spn(str)
     return nil unless @@spn_pattern =~ str
     @@help.clear unless @@quiet
-    pre, mark, ary, cmd, post = $`, $1, $2.chop.split('/'), $3, $'
+    # pre, mark, ary, cmd, post = $`, $1, $2.chop.split('/'), $3, $'
+    pre, mark, yomi, ary, cmd, post = $`, $1, $2, $3.chop.split('/'), $4, $'
+    mark_yomi = mark + '[' + yomi + ']'
     i = cmd.to_i
     n = ary.length
     ret = pre + case
     when cmd.empty?
-      mark + '/' + ary.rotate.join('/') + '/'
+      # mark + '/' + ary.rotate.join('/') + '/'
+      mark_yomi + '/' + ary.rotate.join('/') + '/'
     when cmd == '/'
-      mark + '/' + ary.rotate(-1).join('/') + '/'
+      # mark + '/' + ary.rotate(-1).join('/') + '/'
+      mark_yomi + '/' + ary.rotate(-1).join('/') + '/'
     when cmd == ' '
-      @@help.push(code_help_str(ary[0])) unless @@quiet
+      # @@help.push(code_help_str(ary[0])) unless @@quiet
+      @@help.push(code_help_str(ary[0], yomi)) unless @@quiet
       ary[0]
     when (-n .. -1) === i
       # 負数は右から数える. i == -1 と i == 0 は同じ意味
-      @@help.push(code_help_str(ary[i])) unless @@quiet
+      # @@help.push(code_help_str(ary[i])) unless @@quiet
+      @@help.push(code_help_str(ary[i], yomi)) unless @@quiet
       ary[i]
     when (0 .. n) === i
-      @@help.push(code_help_str(ary[i - 1])) unless @@quiet
+      # @@help.push(code_help_str(ary[i - 1])) unless @@quiet
+      @@help.push(code_help_str(ary[i - 1], yomi)) unless @@quiet
       ary[i - 1]
     else
       str
