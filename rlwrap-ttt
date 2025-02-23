@@ -1,0 +1,52 @@
+#!/usr/bin/env perl
+#
+# usage: rlwrap -z rlwrap-ttt COMMAND ARGS...
+#
+# == Setup
+# Put cli-ttt and rlwrap-ttt into same directory such as ~/bin/
+#   $ cp cli-ttt rlwrap-ttt ~/bin/
+#
+# Put following line into your ~/.inputrc
+#   "\ej": rlwrap-hotkey-without-history
+#
+# == Example usage
+# Edit file with ed, with line editing and ttt support
+#   $ rlwrap -z rlwrap-ttt ed file
+#
+# == History
+# 2025-02-23 initial version
+
+use lib ($ENV{RLWRAP_FILTERDIR} or ".");
+use RlwrapFilter;
+use strict;
+
+
+my $filter = new RlwrapFilter;
+my $name = $filter -> name;
+
+$filter -> help_text("Usage: rlwrap -z $name <command>\n".
+                     "ttt filter");
+
+# TTT
+use Encode qw(decode encode);
+use FindBin;
+use lib "$FindBin::Bin";
+
+require "cli-ttt";
+
+sub ttt_handler($$$$$) {
+    my ($hotkey, $prefix, $postfix, @rest) = @_;
+    return @_ unless $hotkey eq "\ej"; # XXX: <alt-j> に決め打ち
+    my $src = decode('utf-8', $prefix);
+    my $dst;
+    if (($dst = &TTT::clear_ihelp($src)) ne '') { ; }
+    elsif (($dst = &TTT::spn($src)) ne '') { ; }
+    else { $dst = &TTT::reduce(&TTT::decode_substring($src)); }
+    $prefix = encode('utf-8', $dst);
+    ("", $prefix, $postfix, @rest);
+}
+
+$filter -> hotkey_handler(\&ttt_handler);
+# /TTT
+
+$filter -> run;
