@@ -565,7 +565,7 @@ EOF
     ret.push a1 if b2 == a1 || b2 == a2
     ret.push a2 if b1 == a1 || b1 == a2
     # 同じ文字同士の合成の場合は、等価文字を出力する
-    ret.push eqa if a == b && eqa
+    ret.push eqa if a == b && !eqa.empty?
     #
     ret.filter { |c| !c.empty? && c != a && c != b }.uniq
   end
