@@ -769,6 +769,7 @@ EOF
             my $s = $str3;
             my $inflection = $str4 eq '—' ? 'true' : $str4 eq '・' ? 'false' : '';
             my @cands = &maze_look($s, $inflection);
+            @cands = (&bushu_look(substr($s, 0, 1), substr($s, 1, 1)), @cands) if length($s) == 2;
             @cands = (&itaiji_look($s), @cands) if length($s) == 1;
             @cands = &uniq(@cands);
             my $c;

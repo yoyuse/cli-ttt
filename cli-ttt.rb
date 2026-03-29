@@ -751,6 +751,7 @@ EOF
       s = str3
       inflection = str4 == '—' ? true : str4 == '・' ? false : nil
       cands = maze_look(s, inflection)
+      cands = bushu_look(s[0, 1], s[1, 1]) + cands if s.length == 2
       cands = itaiji_look(s) + cands if s.length == 1
       cands = cands.uniq
       case cands.length

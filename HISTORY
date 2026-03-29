@@ -2,6 +2,7 @@
 
 == Under Git control
 
+- 2026-03-29 `fjfj` includes non deterministic bushu conversion
 - 2026-03-29 remove postfix aux conversion
 - 2025-03-12 fix
 - 2025-02-27 remove unnecessary comment
